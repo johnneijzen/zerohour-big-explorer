@@ -5,11 +5,20 @@ use std::path::Path;
 use crate::models::Entry;
 
 /// Stream the payload for `entry` from `r` into `w`.
-pub fn stream_entry_to_writer<R: Read + Seek, W: Write>(r: &mut R, entry: &Entry, mut w: W) -> anyhow::Result<()> {
+pub fn stream_entry_to_writer<R: Read + Seek, W: Write>(
+    r: &mut R,
+    entry: &Entry,
+    w: W,
+) -> anyhow::Result<()> {
     stream_entry_to_writer_with_progress(r, entry, w, None)
 }
 
-pub fn stream_entry_to_writer_with_progress<R: Read + Seek, W: Write>(r: &mut R, entry: &Entry, mut w: W, progress: Option<crate::progress::ProgressSender>) -> anyhow::Result<()> {
+pub fn stream_entry_to_writer_with_progress<R: Read + Seek, W: Write>(
+    r: &mut R,
+    entry: &Entry,
+    mut w: W,
+    progress: Option<crate::progress::ProgressSender>,
+) -> anyhow::Result<()> {
     let mut remaining = entry.length;
     r.seek(SeekFrom::Start(entry.offset))?;
 
@@ -36,11 +45,20 @@ pub fn stream_entry_to_writer_with_progress<R: Read + Seek, W: Write>(r: &mut R,
 
 /// Safely extract an entry from `archive_path` to `dest_path`.
 /// Writes to a temporary `.part` file in the destination directory, then atomically renames.
-pub fn extract_entry_to_path<P: AsRef<Path>>(archive_path: P, entry: &Entry, dest_path: P) -> anyhow::Result<()> {
+pub fn extract_entry_to_path<P: AsRef<Path>>(
+    archive_path: P,
+    entry: &Entry,
+    dest_path: P,
+) -> anyhow::Result<()> {
     extract_entry_to_path_with_progress(archive_path, entry, dest_path, None)
 }
 
-pub fn extract_entry_to_path_with_progress<P: AsRef<Path>>(archive_path: P, entry: &Entry, dest_path: P, progress: Option<crate::progress::ProgressSender>) -> anyhow::Result<()> {
+pub fn extract_entry_to_path_with_progress<P: AsRef<Path>>(
+    archive_path: P,
+    entry: &Entry,
+    dest_path: P,
+    progress: Option<crate::progress::ProgressSender>,
+) -> anyhow::Result<()> {
     let archive_path = archive_path.as_ref();
     let dest_path = dest_path.as_ref();
 

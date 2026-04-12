@@ -24,7 +24,8 @@ fn write_test_big(path: &PathBuf) -> std::io::Result<()> {
     v.extend_from_slice(&0u64.to_le_bytes()); // offset
     v.extend_from_slice(&10u64.to_le_bytes()); // length
     v.push(0u8); // compressed
-    v.push(4u8); v.extend_from_slice(b"text");
+    v.push(4u8);
+    v.extend_from_slice(b"text");
 
     // entry 2
     let name2 = b"image.png";
@@ -33,7 +34,8 @@ fn write_test_big(path: &PathBuf) -> std::io::Result<()> {
     v.extend_from_slice(&10u64.to_le_bytes()); // offset
     v.extend_from_slice(&200u64.to_le_bytes()); // length
     v.push(1u8); // compressed
-    v.push(5u8); v.extend_from_slice(b"image");
+    v.push(5u8);
+    v.extend_from_slice(b"image");
 
     let mut f = File::create(path)?;
     f.write_all(&v)?;
@@ -48,7 +50,7 @@ fn parses_test_big() {
     let _ = std::fs::remove_file(&p);
     write_test_big(&p).expect("write test file");
 
-    let (archive, index, entries) = parse_archive(&p).expect("parse archive");
+    let (_archive, index, entries) = parse_archive(&p).expect("parse archive");
     assert_eq!(index.entries_count, 2);
     assert_eq!(entries.len(), 2);
     assert_eq!(entries[0].name, "readme.txt");

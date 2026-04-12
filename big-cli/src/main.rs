@@ -1,8 +1,8 @@
 use structopt::StructOpt;
 
 mod commands;
-use commands::list::{ListCmd, run as run_list};
 use commands::extract::{ExtractCmd, run as run_extract};
+use commands::list::{ListCmd, run as run_list};
 use commands::pack::{PackCmd, run as run_pack};
 use commands::validate::{ValidateCmd, run as run_validate};
 

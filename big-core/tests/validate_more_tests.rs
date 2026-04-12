@@ -1,5 +1,5 @@
-use std::fs::{File, write};
-use std::io::{Seek, SeekFrom, Write};
+use std::fs::File;
+use std::io::{Seek, Write};
 use tempfile::tempdir;
 
 #[test]
@@ -11,7 +11,10 @@ fn validate_accepts_packed_archive() {
     std::fs::write(src.join("b.txt"), b"world!!!").unwrap();
 
     let out = dir.path().join("out.big");
-    let job = big_core::models::RepackJob { source_dir: format!("{}:{}", src.display(), out.display()), compression: None };
+    let job = big_core::models::RepackJob {
+        source_dir: format!("{}:{}", src.display(), out.display()),
+        compression: None,
+    };
     // run repack (uses packer)
     let _ = big_core::pack::run_repack(&job).unwrap();
 
@@ -50,13 +53,13 @@ fn validate_detects_overlapping_entries() {
     f.write_all(&[0u8]).unwrap();
 
     // pad until payload region and write dummy payloads
-    let cur = f.seek(SeekFrom::Current(0)).unwrap();
+    let cur = f.stream_position().unwrap();
     if cur < 200 {
         let pad = vec![0u8; (200 - cur) as usize];
         f.write_all(&pad).unwrap();
     }
     // write payloads enough to cover offsets
-    let mut payload = vec![0u8; 200];
+    let payload = vec![0u8; 200];
     f.write_all(&payload).unwrap();
     f.flush().unwrap();
 

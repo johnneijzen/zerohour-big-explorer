@@ -48,13 +48,13 @@ fn write_test_big_with_payload(path: &PathBuf) -> std::io::Result<()> {
     let index_offset = v.len() as u64;
     // replace placeholder
     let index_offset_bytes = index_offset.to_le_bytes();
-    for i in 0..8 { v[index_offset_pos + i] = index_offset_bytes[i]; }
+    v[index_offset_pos..(index_offset_pos + 8)].copy_from_slice(&index_offset_bytes);
 
     // append index
     v.extend_from_slice(&idx);
 
     // payload offsets start here
-    let payloads_start = v.len() as u64;
+    let _payloads_start = v.len() as u64;
     // set offsets in index (we know their positions: first entry offset is at index_offset + name1_len+2? easier to rebuild )
 
     // For simplicity, append payloads and then rewrite the offsets directly in the buffer.
@@ -66,21 +66,23 @@ fn write_test_big_with_payload(path: &PathBuf) -> std::io::Result<()> {
     // Now patch offsets in the index area: find offsets by scanning
     let mut cursor = index_offset as usize;
     // entry1: name_len(2)
-    let name1_len = u16::from_le_bytes([v[cursor], v[cursor+1]]) as usize; cursor += 2;
+    let name1_len = u16::from_le_bytes([v[cursor], v[cursor + 1]]) as usize;
+    cursor += 2;
     cursor += name1_len; // name
     // write payload1_offset
     let off_bytes = payload1_offset.to_le_bytes();
-    for i in 0..8 { v[cursor + i] = off_bytes[i]; }
+    v[cursor..(cursor + 8)].copy_from_slice(&off_bytes);
     cursor += 8;
     // skip length (8) + compressed(1) + type_len(1)
     cursor += 8 + 1 + 1;
 
     // entry2: name_len
-    let name2_len = u16::from_le_bytes([v[cursor], v[cursor+1]]) as usize; cursor += 2;
+    let name2_len = u16::from_le_bytes([v[cursor], v[cursor + 1]]) as usize;
+    cursor += 2;
     cursor += name2_len;
     // write payload2_offset
     let off_bytes2 = payload2_offset.to_le_bytes();
-    for i in 0..8 { v[cursor + i] = off_bytes2[i]; }
+    v[cursor..(cursor + 8)].copy_from_slice(&off_bytes2);
 
     let mut f = File::create(path)?;
     f.write_all(&v)?;
@@ -98,12 +100,16 @@ fn extract_payloads() {
     let (_archive, _index, entries) = parse_archive(&p).expect("parse");
     assert_eq!(entries.len(), 2);
 
-    let mut out1 = std::env::temp_dir(); out1.push("out1.bin"); let _ = fs::remove_file(&out1);
+    let mut out1 = std::env::temp_dir();
+    out1.push("out1.bin");
+    let _ = fs::remove_file(&out1);
     extract_entry_to_path(&p, &entries[0], &out1).expect("extract1");
     let data1 = std::fs::read(&out1).expect("read1");
     assert_eq!(data1.len(), entries[0].length as usize);
 
-    let mut out2 = std::env::temp_dir(); out2.push("out2.bin"); let _ = fs::remove_file(&out2);
+    let mut out2 = std::env::temp_dir();
+    out2.push("out2.bin");
+    let _ = fs::remove_file(&out2);
     extract_entry_to_path(&p, &entries[1], &out2).expect("extract2");
     let data2 = std::fs::read(&out2).expect("read2");
     assert_eq!(data2.len(), entries[1].length as usize);

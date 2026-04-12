@@ -1,5 +1,5 @@
-use crate::preview::PreviewHandler;
 use crate::models::Entry;
+use crate::preview::PreviewHandler;
 
 pub struct AudioHandler;
 

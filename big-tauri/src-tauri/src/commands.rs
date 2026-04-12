@@ -1,5 +1,3 @@
-use tauri::command;
-
 #[tauri::command]
 pub fn list_archive(
     archive_path: String,
@@ -32,7 +30,6 @@ pub fn extract_entry(
     Ok(())
 }
 
-use std::path::PathBuf;
 use rfd::FileDialog;
 
 #[tauri::command]

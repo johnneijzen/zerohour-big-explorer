@@ -2,6 +2,8 @@
 members = [
     "big-core",
     "big-cli",
-    "big-tauri",
+    "big-tauri/src-tauri",
     "benchmarks",
 ]
+resolver = "3"
+

@@ -35,7 +35,12 @@ pub fn run(cmd: &PackCmd) -> anyhow::Result<()> {
     }
 
     if cmd.json {
-        println!("{}", serde_json::to_string_pretty(&serde_json::json!({"success":true,"src":cmd.src,"dest":cmd.dest}))?);
+        println!(
+            "{}",
+            serde_json::to_string_pretty(
+                &serde_json::json!({"success":true,"src":cmd.src,"dest":cmd.dest})
+            )?
+        );
     } else {
         println!("Packed {} -> {}", cmd.src, cmd.dest);
     }

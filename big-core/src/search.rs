@@ -4,11 +4,7 @@ use crate::models::Entry;
 pub fn filter_entries(entries: &[Entry], query: Option<&str>) -> Vec<Entry> {
     if let Some(q) = query {
         let ql = q.to_lowercase();
-        entries
-            .iter()
-            .filter(|e| e.name.to_lowercase().contains(&ql))
-            .cloned()
-            .collect()
+        entries.iter().filter(|e| e.name.to_lowercase().contains(&ql)).cloned().collect()
     } else {
         entries.to_vec()
     }

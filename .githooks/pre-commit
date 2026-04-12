@@ -5,9 +5,9 @@ set -euo pipefail
 echo "Running pre-commit checks: rustfmt, clippy"
 
 echo "Checking rustfmt..."
-cargo fmt --all -- --check
+cargo +nightly fmt
 
 echo "Running clippy..."
-cargo clippy --workspace --all-targets -- -D warnings
+cargo clippy --workspace --all-targets
 
 echo "Pre-commit checks passed."

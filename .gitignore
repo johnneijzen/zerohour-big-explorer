@@ -1,4 +1,5 @@
 dont-include-file/*
+specs/001-big-archive-explorer/samples
 
 # Rust files
 /target

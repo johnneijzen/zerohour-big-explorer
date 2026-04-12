@@ -2,13 +2,7 @@ use big_core::models::Entry;
 use big_core::search::filter_entries;
 
 fn make_entry(name: &str) -> Entry {
-    Entry {
-        name: name.to_string(),
-        offset: 0,
-        length: 0,
-        compressed: false,
-        r#type: None,
-    }
+    Entry { name: name.to_string(), offset: 0, length: 0, compressed: false, r#type: None }
 }
 
 #[test]
@@ -40,10 +34,7 @@ fn search_case_insensitive() {
 
 #[test]
 fn search_path_segment_match() {
-    let entries = vec![
-        make_entry("maps/level1/data.bin"),
-        make_entry("maps/level2/data.bin"),
-    ];
+    let entries = vec![make_entry("maps/level1/data.bin"), make_entry("maps/level2/data.bin")];
     let res = filter_entries(&entries, Some("level2"));
     assert_eq!(res.len(), 1);
     assert_eq!(res[0].name, "maps/level2/data.bin");

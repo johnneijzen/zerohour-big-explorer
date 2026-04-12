@@ -1,6 +1,6 @@
 use crate::models::RepackJob;
 use std::fs::{self, File};
-use std::io::{Seek, SeekFrom, Write};
+use std::io::Write;
 use std::path::{Path, PathBuf};
 
 /// Pack a directory into a simple deterministic .BIG archive.
@@ -9,7 +9,11 @@ pub fn pack_directory<P: AsRef<Path>>(src: P, dest: P) -> anyhow::Result<()> {
 }
 
 /// Pack with optional progress sender.
-pub fn pack_directory_with_progress<P: AsRef<Path>>(src: P, dest: P, progress: Option<crate::progress::ProgressSender>) -> anyhow::Result<()> {
+pub fn pack_directory_with_progress<P: AsRef<Path>>(
+    src: P,
+    dest: P,
+    progress: Option<crate::progress::ProgressSender>,
+) -> anyhow::Result<()> {
     let src = src.as_ref();
     let dest = dest.as_ref();
 

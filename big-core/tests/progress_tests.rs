@@ -1,4 +1,4 @@
-use big_core::progress::{progress_channel, Progress};
+use big_core::progress::{Progress, progress_channel};
 
 #[test]
 fn progress_channel_sends_and_receives() {

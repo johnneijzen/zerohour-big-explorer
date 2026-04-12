@@ -18,6 +18,10 @@ impl EntryIterator {
         self.entries.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.entries.is_empty()
+    }
+
     /// Resolve additional metadata for an entry (placeholder).
     pub fn resolve_metadata(entry: &Entry) -> Option<String> {
         entry.r#type.clone()

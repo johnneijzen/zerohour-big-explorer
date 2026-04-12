@@ -1,24 +1,24 @@
 //! big-core: archive parsing and manipulation core library
 
-pub mod models;
 pub mod archive;
-pub mod index;
 pub mod entry;
-pub mod parser;
+pub mod index;
 pub mod iterator;
+pub mod models;
+pub mod parser;
 pub mod search;
 
 pub mod extract;
 pub mod pack;
-pub mod validate;
 pub mod preview;
 pub mod preview_handlers;
 pub mod progress;
+pub mod validate;
 
 pub use archive::open as open_archive;
-pub use parser::parse_archive;
-pub use iterator::EntryIterator;
 pub use extract::{extract_entry_to_path, stream_entry_to_writer};
+pub use iterator::EntryIterator;
+pub use parser::parse_archive;
 
 pub fn version() -> &'static str {
     env!("CARGO_PKG_VERSION")

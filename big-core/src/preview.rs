@@ -12,7 +12,9 @@ pub struct PreviewRegistry {
 }
 
 impl PreviewRegistry {
-    pub fn new() -> Self { Self { handlers: Vec::new() } }
+    pub fn new() -> Self {
+        Self { handlers: Vec::new() }
+    }
     pub fn register<H: PreviewHandler + Send + Sync + 'static>(&mut self, h: H) {
         self.handlers.push(Box::new(h));
     }
@@ -24,5 +26,11 @@ impl PreviewRegistry {
             }
         }
         None
+    }
+}
+
+impl Default for PreviewRegistry {
+    fn default() -> Self {
+        Self::new()
     }
 }
