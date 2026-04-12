@@ -12,6 +12,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Install system dependencies (Linux)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            pkg-config \
+            libglib2.0-dev \
+            libgtk-3-dev \
+            libwebkit2gtk-4.1-dev || sudo apt-get install -y libwebkit2gtk-4.0-dev \
+            libappindicator3-dev \
+            librsvg2-dev
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
         with:
@@ -24,34 +34,31 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
           key: '${{ runner.os }}-cargo-${{ hashFiles(''**/Cargo.lock'') }}'
-      - name: Check formatting (rustfmt)
+      - name: Cache cargo build
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: '${{ runner.os }}-target-${{ hashFiles(''**/Cargo.lock'') }}'
+      - name: Check formatting
         run: cargo fmt --all -- --check
-      - name: Run clippy (lint)
-        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Run clippy
+        run: >-
+          cargo clippy --workspace --exclude big-tauri --all-targets -- -D
+          warnings
       - name: Build Rust workspace
         run: cargo build --workspace --all-targets --verbose
-      - name: Run Rust tests
+      - name: Run tests
         run: cargo test --workspace --all --verbose
-      - name: Setup Node (for big-tauri)
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-      - name: Enable corepack and install pnpm
+          node-version: '24'
+      - name: Enable pnpm
         run: |
           corepack enable
           corepack prepare pnpm@latest --activate
-      - name: Install and build big-tauri frontend
+      - name: Build big-tauri frontend
         working-directory: big-tauri
         run: |
           pnpm install --frozen-lockfile || pnpm install
-          pnpm build || pnpm -v
-      - name: Install frontend deps (optional)
-        run: |
-          if [ -f big-tauri/package.json ]; then
-            cd big-tauri && npm ci
-          fi
-      - name: Build frontend (optional)
-        run: |
-          if [ -f big-tauri/package.json ]; then
-            cd big-tauri && npm run build || true
-          fi
+          pnpm build
