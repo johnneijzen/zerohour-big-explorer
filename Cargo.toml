@@ -1,0 +1,9 @@
+[workspace]
+members = [
+    "big-core",
+    "big-cli",
+    "big-tauri/src-tauri",
+    "benchmarks",
+]
+resolver = "3"
+

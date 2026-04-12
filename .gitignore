@@ -1,1 +1,17 @@
 dont-include-file/*
+specs/001-big-archive-explorer/samples
+
+# Rust files
+/target
+
+# Common ignores
+*.log
+.env*
+node_modules/
+**/node_modules/
+.vscode/
+.idea/
+.DS_Store
+dist/
+build/
+coverage/

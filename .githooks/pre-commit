@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Run formatting and lint checks before commit
+echo "Running pre-commit checks: rustfmt, clippy"
+
+echo "Checking rustfmt..."
+cargo +nightly fmt
+
+echo "Running clippy..."
+cargo clippy --workspace --all-targets
+
+echo "Pre-commit checks passed."
