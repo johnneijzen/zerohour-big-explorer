@@ -1,0 +1,19 @@
+{
+  "name": "big-tauri-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "svelte-kit dev",
+    "build": "svelte-kit build",
+    "preview": "svelte-kit preview"
+  },
+  "devDependencies": {
+    "@sveltejs/kit": "latest",
+    "svelte": "latest",
+    "vite": "latest"
+  },
+  "dependencies": {
+    "shadcn-svelte": "^0.1.0"
+  }
+}

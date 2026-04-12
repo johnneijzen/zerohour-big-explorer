@@ -1,0 +1,11 @@
+[package]
+name = "big-tauri"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+big-core = { path = "../big-core" }
+
+[[bin]]
+name = "big-tauri"
+path = "src/main.rs"

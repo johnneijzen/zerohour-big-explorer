@@ -1,1 +1,4 @@
 dont-include-file/*
+
+# Rust files
+/target
