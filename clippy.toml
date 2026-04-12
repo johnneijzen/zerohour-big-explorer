@@ -1,0 +1,4 @@
+# Clippy config: keep defaults but allow some lints for scaffold
+warns = ["clippy::pedantic"]
+[clippy]
+warns = ["clippy::all"]

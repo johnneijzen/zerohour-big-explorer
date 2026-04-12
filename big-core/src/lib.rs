@@ -6,8 +6,14 @@ pub mod index;
 pub mod entry;
 pub mod parser;
 pub mod iterator;
+pub mod search;
 
 pub mod extract;
+pub mod pack;
+pub mod validate;
+pub mod preview;
+pub mod preview_handlers;
+pub mod progress;
 
 pub use archive::open as open_archive;
 pub use parser::parse_archive;

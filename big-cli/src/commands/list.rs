@@ -17,12 +17,8 @@ pub struct ListCmd {
 pub fn run(cmd: &ListCmd) -> anyhow::Result<()> {
     let (archive_meta, _index, entries) = big_core::parse_archive(&cmd.archive)?;
 
-    // Apply simple substring filter if provided
-    let filtered: Vec<_> = if let Some(ref f) = cmd.filter {
-        entries.into_iter().filter(|e| e.name.contains(f)).collect()
-    } else {
-        entries
-    };
+    // Apply core search/filter function
+    let filtered = big_core::search::filter_entries(&entries, cmd.filter.as_deref());
 
     if cmd.json {
         let out = serde_json::to_string_pretty(&filtered)?;

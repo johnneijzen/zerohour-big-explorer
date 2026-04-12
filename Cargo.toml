@@ -3,4 +3,5 @@ members = [
     "big-core",
     "big-cli",
     "big-tauri",
+    "benchmarks",
 ]

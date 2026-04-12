@@ -32,4 +32,13 @@ pub struct RepackJob {
 pub struct ValidationResult {
     pub errors: Vec<String>,
     pub warnings: Vec<String>,
+    /// Structured validation issues with optional machine-readable code and severity
+    pub issues: Vec<ValidationIssue>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ValidationIssue {
+    pub code: Option<String>,
+    pub message: String,
+    pub severity: String,
 }

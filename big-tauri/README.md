@@ -1,7 +1,7 @@
-# big-tauri frontend
+# Tauri + SvelteKit + TypeScript
 
-This folder contains the SvelteKit frontend for the Tauri app. Use `pnpm install` (or `npm install`) then `pnpm dev` to run in development.
+This template should help get you started developing with Tauri, SvelteKit and TypeScript in Vite.
 
-Files to add:
-- `src/` — SvelteKit app source
-- `src-tauri/` — Tauri Rust integration (calls into `big-core`)
+## Recommended IDE Setup
+
+[VS Code](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer).

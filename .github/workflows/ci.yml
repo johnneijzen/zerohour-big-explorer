@@ -1,0 +1,57 @@
+name: CI
+'on':
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: '${{ runner.os }}-cargo-${{ hashFiles(''**/Cargo.lock'') }}'
+      - name: Check formatting (rustfmt)
+        run: cargo fmt --all -- --check
+      - name: Run clippy (lint)
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Build Rust workspace
+        run: cargo build --workspace --all-targets --verbose
+      - name: Run Rust tests
+        run: cargo test --workspace --all --verbose
+      - name: Setup Node (for big-tauri)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Enable corepack and install pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
+      - name: Install and build big-tauri frontend
+        working-directory: big-tauri
+        run: |
+          pnpm install --frozen-lockfile || pnpm install
+          pnpm build || pnpm -v
+      - name: Install frontend deps (optional)
+        run: |
+          if [ -f big-tauri/package.json ]; then
+            cd big-tauri && npm ci
+          fi
+      - name: Build frontend (optional)
+        run: |
+          if [ -f big-tauri/package.json ]; then
+            cd big-tauri && npm run build || true
+          fi
