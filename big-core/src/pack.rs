@@ -1,6 +1,6 @@
 use crate::models::RepackJob;
 use std::fs::{self, File};
-use std::io::Write;
+use std::io::{Read, Seek, Write};
 use std::path::{Path, PathBuf};
 
 /// Pack a directory into a simple deterministic .BIG archive.
@@ -98,4 +98,106 @@ pub fn run_repack(job: &RepackJob) -> anyhow::Result<String> {
     } else {
         Ok(format!("repack-job-{}", job.source_dir))
     }
+}
+
+/// Append a file into an existing archive by creating a new temporary archive that
+/// copies existing entries and inserts the new file. If `force` is false and
+/// `archive_target_path` already exists in archive, returns an error.
+pub fn append_file_to_archive<P: AsRef<std::path::Path>, Q: AsRef<std::path::Path>>(
+    archive_path: P,
+    source_file: Q,
+    archive_target_path: &str,
+    force: bool,
+) -> anyhow::Result<()> {
+    let archive_path = archive_path.as_ref();
+    let source_file = source_file.as_ref();
+
+    let (_archive_meta, _index, mut entries) = crate::parser::parse_archive(archive_path)?;
+
+    // Check collision
+    if entries.iter().any(|e| e.name == archive_target_path) && !force {
+        return Err(anyhow::anyhow!("target path already exists in archive"));
+    }
+
+    // Prepare list of names and lengths (existing entries + new one)
+    let mut names: Vec<String> = entries.iter().map(|e| e.name.clone()).collect();
+    let mut lengths: Vec<u64> = entries.iter().map(|e| e.length).collect();
+
+    let new_len = std::fs::metadata(source_file)?.len();
+    // If exists and force, replace entry by removing old and pushing new name
+    if let Some(pos) = names.iter().position(|n| n == archive_target_path) {
+        names.remove(pos);
+        lengths.remove(pos);
+    }
+    names.push(archive_target_path.to_string());
+    lengths.push(new_len);
+
+    // compute index size similar to pack_directory
+    let mut index_size: u64 = 0;
+    for name in &names {
+        index_size += 2 + (name.len() as u64) + 8 + 8 + 1 + 1;
+    }
+
+    let header_len: u64 = 4 + 4 + 8 + 4;
+    let index_offset = header_len;
+    let payload_start = index_offset + index_size;
+
+    let mut offsets: Vec<u64> = Vec::new();
+    let mut cur = payload_start;
+    for len in &lengths {
+        offsets.push(cur);
+        cur += *len;
+    }
+
+    // create temp file in same dir
+    let mut tmp_path = archive_path.to_path_buf();
+    tmp_path.set_extension("bigtmp");
+
+    let mut out = std::fs::File::create(&tmp_path)?;
+
+    // write header
+    out.write_all(b"BIG\0")?;
+    out.write_all(&1u32.to_le_bytes())?;
+    out.write_all(&index_offset.to_le_bytes())?;
+    out.write_all(&(names.len() as u32).to_le_bytes())?;
+
+    // write index
+    for (i, name) in names.iter().enumerate() {
+        let name_bytes = name.as_bytes();
+        out.write_all(&(name_bytes.len() as u16).to_le_bytes())?;
+        out.write_all(name_bytes)?;
+        out.write_all(&offsets[i].to_le_bytes())?;
+        out.write_all(&lengths[i].to_le_bytes())?;
+        out.write_all(&[0u8])?;
+        out.write_all(&[0u8])?;
+    }
+
+    // copy payloads for existing entries in original archive
+    let mut srcf = std::fs::File::open(archive_path)?;
+    for e in entries.iter() {
+        // if this entry was replaced by new file (force), skip it
+        if e.name == archive_target_path {
+            continue;
+        }
+        srcf.seek(std::io::SeekFrom::Start(e.offset))?;
+        let mut to_copy = e.length;
+        let mut buf = [0u8; 8 * 1024];
+        while to_copy > 0 {
+            let read = std::cmp::min(buf.len() as u64, to_copy) as usize;
+            srcf.read_exact(&mut buf[..read])?;
+            out.write_all(&buf[..read])?;
+            to_copy -= read as u64;
+        }
+    }
+
+    // append new file
+    let mut newf = std::fs::File::open(source_file)?;
+    std::io::copy(&mut newf, &mut out)?;
+
+    out.sync_all()?;
+
+    // replace original
+    std::fs::rename(&tmp_path, archive_path)?;
+
+    Ok(())
 }

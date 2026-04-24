@@ -40,3 +40,50 @@ pub fn open_dialog() -> Result<Option<String>, String> {
         None => Ok(None),
     }
 }
+
+#[tauri::command]
+pub fn extract_file_bytes(archive_path: String, entry_name: String) -> Result<Vec<u8>, String> {
+    let (_archive_meta, _index, entries) =
+        big_core::parse_archive(&archive_path).map_err(|e| e.to_string())?;
+
+    let entry = entries
+        .into_iter()
+        .find(|e| e.name == entry_name)
+        .ok_or_else(|| format!("entry not found: {}", entry_name))?;
+
+    big_core::extract::extract_file(&archive_path, &entry).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn extract_file_to_disk(
+    archive_path: String,
+    entry_name: String,
+    output: String,
+) -> Result<(), String> {
+    let (_archive_meta, _index, entries) =
+        big_core::parse_archive(&archive_path).map_err(|e| e.to_string())?;
+
+    let entry = entries
+        .into_iter()
+        .find(|e| e.name == entry_name)
+        .ok_or_else(|| format!("entry not found: {}", entry_name))?;
+
+    big_core::extract::extract_entry_to_path(&archive_path, &entry, &output)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn pack_directory(input_dir: String, output_archive: String) -> Result<(), String> {
+    big_core::pack::pack_directory(&input_dir, &output_archive).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn append_file(
+    archive_path: String,
+    source: String,
+    target_archive_path: String,
+    force: bool,
+) -> Result<(), String> {
+    big_core::pack::append_file_to_archive(&archive_path, &source, &target_archive_path, force)
+        .map_err(|e| e.to_string())
+}

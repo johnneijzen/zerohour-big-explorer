@@ -6,6 +6,7 @@ pub mod index;
 pub mod iterator;
 pub mod models;
 pub mod parser;
+pub mod paths;
 pub mod search;
 
 pub mod extract;
