@@ -71,11 +71,12 @@ pub fn parse_archive<P: AsRef<Path>>(path: P) -> anyhow::Result<(Archive, Index,
 
         let mut file_count = file_count_le;
         let mut header_size = header_size_le;
-        if !(header_size_le <= archive_size && file_count_le < 1_000_000) {
-            if header_size_swapped <= archive_size && file_count_swapped < 1_000_000 {
-                file_count = file_count_swapped;
-                header_size = header_size_swapped;
-            }
+        if !(header_size_le <= archive_size && file_count_le < 1_000_000)
+            && header_size_swapped <= archive_size
+            && file_count_swapped < 1_000_000
+        {
+            file_count = file_count_swapped;
+            header_size = header_size_swapped;
         }
 
         // Calculate file headers region size: header_size - SBigHeader(16) - SBigLastHeader(8)
@@ -109,7 +110,9 @@ pub fn parse_archive<P: AsRef<Path>>(path: P) -> anyhow::Result<(Archive, Index,
                 if cursor.read_exact(&mut b).is_err() {
                     break;
                 }
-                if b[0] == 0 { break; }
+                if b[0] == 0 {
+                    break;
+                }
                 name_bytes.push(b[0]);
             }
             let name = String::from_utf8_lossy(&name_bytes).into_owned();
@@ -121,5 +124,5 @@ pub fn parse_archive<P: AsRef<Path>>(path: P) -> anyhow::Result<(Archive, Index,
     }
 
     // Unknown header: not a supported BIG format, return empty index
-    return Ok((archive, Index { entries_count: 0 }, Vec::new()));
+    Ok((archive, Index { entries_count: 0 }, Vec::new()))
 }
