@@ -12,8 +12,10 @@ Getting started
 2. Build and run with the standard Tauri workflow.
 
 Gui Interface 
-![Alt text](./page/image/gui.webp)
+![GUI Pic](./page/image/gui.webp)
 
+CLI Interface
+![CLI Pic](./page/image/cli.webp)
 
 Quick CLI examples
 
