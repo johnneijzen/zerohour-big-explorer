@@ -165,17 +165,30 @@ jobs:
         run: |
           cd big-tauri
           mkdir -p release
+          # Support both subcrate-local target and workspace-level target directories
           if [ -d target ]; then
-            cd target
-            mkdir -p release
-            # Collect common Linux bundles (AppImage / bundle folders) if created
-            find . -maxdepth 3 -type f -iname "*.AppImage" -print -exec cp {} ../../big-tauri-linux.AppImage \; || true
-            cd ../..
-            zip -r big-tauri-linux.zip target || true
+            TARGET_DIR="target"
+          elif [ -d ../target ]; then
+            TARGET_DIR="../target"
           else
-            echo "No big-tauri/target directory; tauri build likely failed. Creating placeholder zip."
+            TARGET_DIR=""
+          fi
+
+          if [ -n "$TARGET_DIR" ]; then
+            rm -rf release/* || true
+            # Copy common bundles (AppImage / deb) into release/ if present
+            find "$TARGET_DIR" -maxdepth 4 -type f \( -iname "*.AppImage" -o -iname "*.deb" \) -print -exec cp {} release/ \; || true
+            # If the build produced a local target folder, include the whole target tree
+            if [ "$TARGET_DIR" = "target" ]; then
+              zip -r ../big-tauri-linux.zip target || true
+            else
+              # Workspace-level target: zip the collected release files and place archive at repo root
+              zip -r ../big-tauri-linux.zip release || true
+            fi
+          else
+            echo "No big-tauri/target or ../target directory; tauri build likely failed. Creating placeholder zip."
             echo "tauri build failed on CI; no artifacts produced." > release/README.txt
-            zip -r big-tauri-linux.zip release || true
+            zip -r ../big-tauri-linux.zip release || true
           fi
 
       - name: Upload big-tauri artifact
