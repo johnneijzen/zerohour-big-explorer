@@ -2,87 +2,76 @@
 
 ## Phase 1 — Setup
 
-- [ ] T001 Initialize feature branch and workspace scaffolding in specs/002-big-archive-extraction
- - [x] T001 Initialize feature branch and workspace scaffolding in specs/002-big-archive-extraction
-- [ ] T002 [P] Add CI cargo test entry for feature in Cargo.toml (workspace root)
- - [x] T002 [P] Add CI cargo test entry for feature in Cargo.toml (workspace root)
-- [ ] T003 Create feature integration test harness in tests/integration/big-archive-extraction.rs
- - [ ] T002 [P] Add CI cargo test entry for feature in Cargo.toml (workspace root)
- - [x] T003 Create feature integration test harness in tests/integration/big-archive-extraction.rs
+- [x] T001 Initialize feature branch and workspace scaffolding in specs/002-big-archive-extraction
+- [x] T002 [P] Add CI cargo test entry for feature in Cargo.toml (workspace root)
+- [x] T003 Create feature integration test harness in tests/integration/big-archive-extraction.rs
 
 ## Phase 2 — Foundational (big-core library)
 
- - [x] T010 [P] Add unit tests for streaming extraction and path-sanitization in big-core/tests/ (create test harness and failing tests before implementation)
+- [x] T010 [P] Add unit tests for streaming extraction and path-sanitization in big-core/tests/ (create test harness and failing tests before implementation)
 
- - [x] T004 Add `extract_file` API in big-core/src/extract.rs
- - [x] T005 Add `extract_to_path` API in big-core/src/extract.rs
- - [x] T006 Add `extract_all` API in big-core/src/extract.rs
- - [x] T007 Add `pack_directory` API in big-core/src/pack.rs
- - [x] T008 Add `append_file_to_archive` API in big-core/src/pack.rs
- - [x] T009 Implement path sanitization helpers in big-core/src/paths.rs
+- [x] T004 Add `extract_file` API in big-core/src/extract.rs
+- [x] T005 Add `extract_to_path` API in big-core/src/extract.rs
+- [x] T006 Add `extract_all` API in big-core/src/extract.rs
+- [x] T007 Add `pack_directory` API in big-core/src/pack.rs
+- [x] T008 Add `append_file_to_archive` API in big-core/src/pack.rs
+- [x] T009 Implement path sanitization helpers in big-core/src/paths.rs
 
 ## Phase 3 — User Stories (priority order)
 
 **User Story 1 — Browse the archive (UI file list & metadata)**
 
- - [x] T011 [US1] Render clickable file list in big-tauri/src/lib/ui/file_list.svelte
- - [x] T012 [US1] Implement Tauri command to fetch archive index in big-tauri/src-tauri/src/commands.rs
- - [x] T013 [US1] Wire Tauri command to `big-core` index iterator in big-tauri/src-tauri/src/commands.rs
+- [x] T011 [US1] Render clickable file list in big-tauri/src/lib/ui/file_list.svelte
+- [x] T012 [US1] Implement Tauri command to fetch archive index in big-tauri/src-tauri/src/commands.rs
+- [x] T013 [US1] Wire Tauri command to `big-core` index iterator in big-tauri/src-tauri/src/commands.rs
 - [x] T014 [US1] Add integration test: open archive and assert file list loads in tests/integration/big-archive-extraction.rs
 
 **User Story 2 — Extract a single file (UI)**
 
- - [x] T015 [US2] Add `extract_file_bytes` Tauri command in big-tauri/src-tauri/src/commands.rs
- - [x] T016 [US2] Add `extract_file_to_disk` Tauri command in big-tauri/src-tauri/src/commands.rs
- - [x] T017 [US2] Implement frontend Extract action and save dialog in big-tauri/src/lib/components/Extract.svelte
- - [x] T018 [P] [US2] Integration test: request bytes via Tauri command and assert checksum in tests/integration/big-archive-extraction.rs (create harness/test stub before implementing Tauri command)
+- [x] T015 [US2] Add `extract_file_bytes` Tauri command in big-tauri/src-tauri/src/commands.rs
+- [x] T016 [US2] Add `extract_file_to_disk` Tauri command in big-tauri/src-tauri/src/commands.rs
+- [x] T017 [US2] Implement frontend Extract action and save dialog in big-tauri/src/lib/components/Extract.svelte
+- [x] T018 [P] [US2] Integration test: request bytes via Tauri command and assert checksum in tests/integration/big-archive-extraction.rs
 
 **User Story 3 — Extract single file (CLI)**
 
- - [x] T019 [US3] Add `extract` command scaffolding in big-cli/src/commands/extract.rs
- - [x] T020 [US3] Implement CLI `extract` to call `big-core::extract_to_path` and handle `-o` output path in big-cli/src/commands/extract.rs
- - [x] T021 [US3] Add integration test for `big-cli extract` in tests/big-core/pack_tests.rs or tests/integration/ (create test stub before implementation)
+- [x] T019 [US3] Add `extract` command scaffolding in big-cli/src/commands/extract.rs
+- [x] T020 [US3] Implement CLI `extract` to call `big-core::extract_to_path` and handle `-o` output path in big-cli/src/commands/extract.rs
+- [x] T021 [US3] Add integration test for `big-cli extract` in tests/big-core/pack_tests.rs or tests/integration/
 
 **User Story 4 — Unpack entire archive (CLI)**
 
- - [x] T022 [US4] Add `unpack` command scaffolding in big-cli/src/commands/pack.rs
- - [x] T023 [US4] Implement `big-cli unpack` to call `big-core::extract_all` and recreate folder hierarchy in big-cli/src/commands/pack.rs
- - [x] T024 [US4] Add progress output and test for `big-cli unpack` in tests/integration/big-archive-extraction.rs (add test stub before implementation)
+- [x] T022 [US4] Add `unpack` command scaffolding in big-cli/src/commands/pack.rs
+- [x] T023 [US4] Implement `big-cli unpack` to call `big-core::extract_all` and recreate folder hierarchy in big-cli/src/commands/pack.rs
+- [x] T024 [US4] Add progress output and test for `big-cli unpack` in tests/integration/big-archive-extraction.rs
 
- - [ ] T036 [US4] Add Unpack/"Extract All" UI action and button in big-tauri/src/lib/components/Unpack.svelte
- - [ ] T037 [US4] Add `unpack_all` Tauri command in big-tauri/src-tauri/src/commands.rs to call `big-core::extract_all`
- - [ ] T038 [US4] Implement frontend flow: select output directory, confirm, call `unpack_all`, and show progress in big-tauri/src/lib/components/Unpack.svelte
- - [ ] T039 [P] [US4] Add integration test for UI-triggered unpack: invoke `unpack_all` from UI test harness and assert files written in tests/integration/big-archive-extraction.rs
-
- - [x] T039 [P] [US4] Add integration test for UI-triggered unpack: invoke `unpack_all` from UI test harness and assert files written in tests/integration/big-archive-extraction.rs
-
- - [x] T036 [US4] Add Unpack/"Extract All" UI action and button in big-tauri/src/lib/components/Unpack.svelte
- - [x] T037 [US4] Add `unpack_all` Tauri command in big-tauri/src-tauri/src/commands.rs to call `big-core::extract_all`
- - [x] T038 [US4] Implement frontend flow: select output directory, confirm, call `unpack_all`, and show progress in big-tauri/src/lib/components/Unpack.svelte
- - [ ] T039 [P] [US4] Add integration test for UI-triggered unpack: invoke `unpack_all` from UI test harness and assert files written in tests/integration/big-archive-extraction.rs
+- [x] T036 [US4] Add Unpack/"Extract All" UI action and button in big-tauri/src/lib/components/Unpack.svelte
+- [x] T037 [US4] Add `unpack_all` Tauri command in big-tauri/src-tauri/src/commands.rs to call `big-core::extract_all`
+- [x] T038 [US4] Implement frontend flow: select output directory, confirm, call `unpack_all`, and show progress in big-tauri/src/lib/components/Unpack.svelte
+- [x] T039 [P] [US4] Add integration test for UI-triggered unpack: invoke `unpack_all` from UI test harness and assert files written in tests/integration/big-archive-extraction.rs
 
 **User Story 5 — Pack directory into .BIG (CLI & library)**
 
- - [x] T025 [US5] Implement `pack_directory` wiring in big-cli/src/commands/pack.rs to call `big-core::pack_directory`
- - [x] T026 [US5] Add integration test: pack a sample folder and open produced .BIG with big-core in tests/integration/ (create test stub before implementation)
+- [x] T025 [US5] Implement `pack_directory` wiring in big-cli/src/commands/pack.rs to call `big-core::pack_directory`
+- [x] T026 [US5] Add integration test: pack a sample folder and open produced .BIG with big-core in tests/integration/
 
 **User Story 6 — Append single file into existing archive (CLI & UI)**
 
- - [x] T027 [US6] Implement `append` CLI command in big-cli/src/commands/append.rs to call `big-core::append_file_to_archive` with `--path` and `--force` handling
- - [x] T028 [US6] Add `append_file` Tauri command in big-tauri/src-tauri/src/commands.rs and UI confirmation modal in big-tauri/src/lib/components/Append.svelte
- - [x] T029 [US6] Add integration test for append behavior (fail when exists, succeed with force) in tests/integration/big-archive-extraction.rs (create test stub before implementation)
+- [x] T027 [US6] Implement `append` CLI command in big-cli/src/commands/append.rs to call `big-core::append_file_to_archive` with `--path` and `--force` handling
+- [x] T028 [US6] Add `append_file` Tauri command in big-tauri/src-tauri/src/commands.rs and UI confirmation modal in big-tauri/src/lib/components/Append.svelte
+- [x] T029 [US6] Add integration test for append behavior (fail when exists, succeed with force) in tests/integration/big-archive-extraction.rs
 
 ## Final Phase — Polish & Cross-Cutting Concerns
 
- - [x] T030 Add documentation updates: update README.md and specs/002-big-archive-extraction/quickstart.md with usage examples for `big-cli` and Tauri commands
- - [x] T031 Run workspace formatting and linting (rustfmt) and ensure tests pass
+- [x] T030 Add documentation updates: update README.md and specs/002-big-archive-extraction/quickstart.md with usage examples for `big-cli` and Tauri commands
+- [x] T031 Run workspace formatting and linting (rustfmt) and ensure tests pass
 - [x] T032 Prepare release notes entry and changelog fragment in docs/
 
 ## Additional Tasks (from spec coverage)
 
- - [x] T033 [US5] Add `pack_directory` Tauri command in big-tauri/src-tauri/src/commands.rs
+- [x] T033 [US5] Add `pack_directory` Tauri command in big-tauri/src-tauri/src/commands.rs
 - [x] T034 [US5] Add Pack UI in big-tauri/src/lib/components/Pack.svelte
- - [x] T035 [P] [US2] Add WAV preview latency/performance test in tests/integration/big-archive-perf.rs
+- [x] T035 [P] [US2] Add WAV preview latency/performance test in tests/integration/big-archive-perf.rs
 
 	- Acceptance: use a canonical 50MB WAV sample (place under `specs/002-big-archive-extraction/samples/50mb.wav`), invoke `big-core::extract_file` (or `extract_file_bytes`) and measure time from request start to when audio playback can start (decode+start). The CI job SHOULD record timings as an artifact but NOT fail solely on timing variance. The test MUST be runnable locally; it is enabled when `RUN_PERF=1` and will produce a JSON timings artifact when run.
 
