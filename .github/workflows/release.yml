@@ -10,7 +10,8 @@ jobs:
     name: Build big-cli (linux-musl)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Cache cargo registry
         uses: actions/cache@v4
@@ -62,7 +63,8 @@ jobs:
     name: Build big-cli (windows)
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Cache cargo registry (windows)
         uses: actions/cache@v4
@@ -109,7 +111,19 @@ jobs:
     name: Build big-tauri (linux)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: install dependencies (ubuntu only)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            pkg-config \
+            libglib2.0-dev \
+            libgtk-3-dev \
+            libwebkit2gtk-4.1-dev || sudo apt-get install -y libwebkit2gtk-4.0-dev \
+            libappindicator3-dev \
+            librsvg2-dev
 
       - name: Cache pnpm and node_modules
         uses: actions/cache@v4
@@ -134,17 +148,6 @@ jobs:
             target
           key: ${{ runner.os }}-target-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Install system dependencies (Linux)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            pkg-config \
-            libglib2.0-dev \
-            libgtk-3-dev \
-            libwebkit2gtk-4.1-dev || sudo apt-get install -y libwebkit2gtk-4.0-dev \
-            libappindicator3-dev \
-            librsvg2-dev
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -160,27 +163,36 @@ jobs:
           cd big-tauri
           pnpm install --frozen-lockfile || pnpm install
 
-      - name: Setup Rust for tauri
+      - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           profile: minimal
           override: true
 
-      - name: Build big-tauri (app bundle)
-        run: |
-          cd big-tauri
-          pnpm build
-          pnpm tauri build --target x86_64-unknown-linux-gnu || pnpm tauri build || true
+      - name: Build with tauri-action
+        uses: tauri-apps/tauri-action@v1
+        with:
+          args: '--target x86_64-unknown-linux-gnu'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Package big-tauri output
         run: |
-          cd big-tauri/target
+          cd big-tauri
           mkdir -p release
-          # Collect common Linux bundles (AppImage / bundle folders) if created
-          find . -maxdepth 3 -type f -iname "*.AppImage" -print -exec cp {} ../../big-tauri-linux.AppImage \; || true
-          cd ../..
-          zip -r big-tauri-linux.zip big-tauri/target || true
+          if [ -d target ]; then
+            cd target
+            mkdir -p release
+            # Collect common Linux bundles (AppImage / bundle folders) if created
+            find . -maxdepth 3 -type f -iname "*.AppImage" -print -exec cp {} ../../big-tauri-linux.AppImage \; || true
+            cd ../..
+            zip -r big-tauri-linux.zip target || true
+          else
+            echo "No big-tauri/target directory; tauri build likely failed. Creating placeholder zip."
+            echo "tauri build failed on CI; no artifacts produced." > release/README.txt
+            zip -r big-tauri-linux.zip release || true
+          fi
 
       - name: Upload big-tauri artifact
         uses: actions/upload-artifact@v4
@@ -192,7 +204,8 @@ jobs:
     name: Build big-tauri (windows)
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Cache pnpm and node_modules (windows)
         uses: actions/cache@v4
@@ -244,10 +257,11 @@ jobs:
 
       - name: Build big-tauri (windows)
         shell: powershell
+        continue-on-error: true
         run: |
           cd big-tauri
           pnpm build
-          pnpm tauri build || true
+          pnpm tauri build
 
       - name: Package big-tauri output (windows)
         shell: powershell
@@ -257,8 +271,12 @@ jobs:
           New-Item -ItemType Directory -Force -Path release | Out-Null
           if (Test-Path $out) {
             Get-ChildItem -Path $out -Recurse -File | ForEach-Object { Copy-Item $_.FullName -Destination release -Force }
+            Compress-Archive -Path release\* -DestinationPath ..\big-tauri-windows.zip
+          } else {
+            Write-Host "No target bundle found; creating placeholder zip."
+            "tauri build failed on CI; no artifacts produced." | Out-File -FilePath release\README.txt -Encoding utf8
+            Compress-Archive -Path release\* -DestinationPath ..\big-tauri-windows.zip
           }
-          Compress-Archive -Path release\* -DestinationPath ..\big-tauri-windows.zip
 
       - name: Upload big-tauri-windows
         uses: actions/upload-artifact@v4
