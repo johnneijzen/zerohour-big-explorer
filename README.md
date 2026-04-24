@@ -11,6 +11,10 @@ Getting started
 1. Install prerequisites (see Tauri docs).
 2. Build and run with the standard Tauri workflow.
 
+Gui Interface 
+![Alt text](./page/image/gui.webp)
+
+
 Quick CLI examples
 
 ```bash
