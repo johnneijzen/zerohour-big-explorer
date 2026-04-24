@@ -40,7 +40,8 @@ pub fn parse_archive<P: AsRef<Path>>(path: P) -> anyhow::Result<(Archive, Index,
 
         // use IndexReader to read entries
         let reader = IndexReader::new();
-        let entries = reader.read_entries_from(&mut f, index_offset, index_count).unwrap_or_default();
+        let entries =
+            reader.read_entries_from(&mut f, index_offset, index_count).unwrap_or_default();
 
         return Ok((archive, Index { entries_count: entries.len() }, entries));
     }
