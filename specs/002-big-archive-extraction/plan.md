@@ -17,7 +17,8 @@ Add interactive browsing, single-file extraction (UI + CLI), full-archive unpack
 -->
 
 **Language/Version**: Rust (workspace crates use edition = "2024"). Use the project's existing toolchain; prefer the stable Rust toolchain that supports edition 2024.  
-**Primary Dependencies**: `big-core` (internal), `tauri` (big-tauri), `structopt`/`clap` (big-cli uses `structopt` currently), `serde`, `walkdir`, `anyhow`, `tauri` plugins (dialog, fs).  
+**Primary Dependencies**: `big-core` (internal), `tauri` (big-tauri), `clap` (big-cli uses `clap` v3+ with derive), `serde`, `walkdir`, `anyhow`, `tauri` plugins (dialog, fs).  
+**Rationale**: `clap` v3+ integrates the `structopt` derive API (see clap documentation). Prefer `clap` for unified maintenance, documentation parity, and future-proof derive support.
 **Storage**: Filesystem-based archives (`.BIG`) — no network storage required.  
 **Testing**: `cargo test` for unit tests; integration tests under `tests/` for CLI and archive round-trips.  
 **Target Platform**: Desktop (Linux, Windows supported via Tauri).  
@@ -61,7 +62,6 @@ big-core/
   ├── models.rs
   ├── extract.rs
   ├── pack.rs
-  ├── operations.rs    # new: append/extractions helpers
   ├── iterator.rs
   ├── progress.rs
   ├── preview.rs

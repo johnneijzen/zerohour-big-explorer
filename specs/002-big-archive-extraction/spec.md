@@ -21,9 +21,9 @@ Extend the existing BIG Explorer to allow users to interactively browse archive 
 - Click and inspect files in the UI
 - Extract a single file (UI + CLI)
 - Unpack/Extract entire archive (CLI)
-- Preview supported file types (WAV audio)
- - Pack directory back into a `.BIG` archive (CLI + UI)
- - Append a single file into an existing `.BIG` archive (CLI + UI)
+- Pack directory back into a `.BIG` archive (CLI + UI)
+- Append a single file into an existing `.BIG` archive (CLI + UI)
+
 
 
 ## Architecture (high level)
@@ -179,20 +179,20 @@ Behavior:
 - Avoid buffering entire files into memory except for small previews; the CLI `extract_all` must stream.
 
 ## Functional Requirements *(testable)*
-
-- CLI can unpack entire archive: run `big-cli unpack` and verify files written and structure preserved.
-- CLI can extract a single file: run `big-cli extract` and verify the file matches `extract_file` output.
-- Tauri UI can request file bytes and play WAV previews without freezing the UI.
-- Extracted files cannot be written outside the chosen output directory.
- - CLI `big-cli pack` produces a valid `.BIG` that can be opened by the application and contains the expected files and relative paths.
- - CLI `big-cli append` successfully adds a file entry to an existing archive without corrupting existing entries.
- - Tauri `pack_directory` and `append_file` commands invoke `big-core` APIs and report success/failure to the UI.
+ 
+- FR-001: CLI can unpack entire archive — run `big-cli unpack` and verify files written and structure preserved.
+- FR-002: CLI can extract a single file — run `big-cli extract` and verify the file matches `extract_file` output (checksum equality).
+- FR-003: Tauri UI can request file bytes and play WAV previews without freezing the UI (see performance criteria).
+- FR-004: Extracted files cannot be written outside the chosen output directory (path traversal prevented).
+- FR-005: CLI `big-cli pack` produces a valid `.BIG` that can be opened by the application and contains the expected files and relative paths.
+- FR-006: CLI `big-cli append` successfully adds a file entry to an existing archive without corrupting existing entries; append must be atomic.
+- FR-007: Tauri `pack_directory` and `append_file` commands invoke `big-core` APIs and report success/failure to the UI.
 
 ## Success Criteria *(mandatory & measurable)*
 
-- `big-cli unpack` successfully writes all archive entries and preserves folder structure for test archives.
-- `big-cli extract` returns the exact bytes for a selected entry (checksum match) in 95% of test cases.
-- WAV preview in UI plays without blocking rendering for typical archive sizes (<200MB) and for single-file previews under 50MB.
+- `big-cli unpack` successfully writes all archive entries and preserves folder structure for canonical test archives included in the integration suite (checksum and file-count checks).
+- `big-cli extract` returns the exact bytes for a selected entry (checksum match) for all canonical test entries used by the integration tests.
+- WAV preview in UI plays without blocking rendering for single-file previews <= 50MB; playback start latency must be <= 200ms on a representative development machine (SSD, 4-core CPU). Add an integration performance test that measures playback start and UI responsiveness for a 50MB WAV sample.
 
 ## Key Entities
 

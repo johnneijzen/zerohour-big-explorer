@@ -8,13 +8,13 @@
 
 ## Phase 2 — Foundational (big-core library)
 
-- [ ] T004 [US0] Add `extract_file` API in big-core/src/extract.rs
-- [ ] T005 [US0] Add `extract_to_path` API in big-core/src/extract.rs
-- [ ] T006 [US0] Add `extract_all` API in big-core/src/extract.rs
-- [ ] T007 [US0] Add `pack_directory` API in big-core/src/pack.rs
-- [ ] T008 [US0] Add `append_file_to_archive` API in big-core/src/pack.rs
+- [ ] T004 Add `extract_file` API in big-core/src/extract.rs
+- [ ] T005 Add `extract_to_path` API in big-core/src/extract.rs
+- [ ] T006 Add `extract_all` API in big-core/src/extract.rs
+- [ ] T007 Add `pack_directory` API in big-core/src/pack.rs
+- [ ] T008 Add `append_file_to_archive` API in big-core/src/pack.rs
 - [ ] T009 Implement path sanitization helpers in big-core/src/paths.rs
-- [ ] T010 Add unit tests for streaming extraction and path-sanitization in big-core/tests/
+- [ ] T010 [P] Add unit tests for streaming extraction and path-sanitization in big-core/tests/
 
 ## Phase 3 — User Stories (priority order)
 
@@ -30,7 +30,7 @@
 - [ ] T015 [US2] Add `extract_file_bytes` Tauri command in big-tauri/src-tauri/src/commands.rs
 - [ ] T016 [US2] Add `extract_file_to_disk` Tauri command in big-tauri/src-tauri/src/commands.rs
 - [ ] T017 [US2] Implement frontend Extract action and save dialog in big-tauri/src/lib/components/Extract.svelte
-- [ ] T018 [US2] Integration test: request bytes via Tauri command and assert checksum in tests/integration/big-archive-extraction.rs
+ - [ ] T018 [P] [US2] Integration test: request bytes via Tauri command and assert checksum in tests/integration/big-archive-extraction.rs
 
 **User Story 3 — Extract single file (CLI)**
 
@@ -57,14 +57,24 @@
 
 ## Final Phase — Polish & Cross-Cutting Concerns
 
-- [ ] T030 [US0] Add documentation updates: update README.md and specs/002-big-archive-extraction/quickstart.md with usage examples for `big-cli` and Tauri commands
-- [ ] T031 [US0] Run workspace formatting and linting (rustfmt) and ensure tests pass
-- [ ] T032 [US0] Prepare release notes entry and changelog fragment in docs/
+- [ ] T030 Add documentation updates: update README.md and specs/002-big-archive-extraction/quickstart.md with usage examples for `big-cli` and Tauri commands
+- [ ] T031 Run workspace formatting and linting (rustfmt) and ensure tests pass
+- [ ] T032 Prepare release notes entry and changelog fragment in docs/
+
+## Additional Tasks (from spec coverage)
+
+- [ ] T033 [US5] Add `pack_directory` Tauri command in big-tauri/src-tauri/src/commands.rs
+- [ ] T034 [US5] Add Pack UI in big-tauri/src/lib/components/Pack.svelte
+- [ ] T035 [P] [US2] Add WAV preview latency/performance test in tests/integration/big-archive-extraction_performance.rs
+
+	- Acceptance: use a canonical 50MB WAV sample (place under `specs/002-big-archive-extraction/samples/50mb.wav`), invoke the Tauri `extract_file_bytes` command (or `big-core::extract_file`) and measure time from request start to when audio playback can start (decode+start). Pass if measured latency <= 200ms on a representative dev machine; record results as a CI artifact (JSON with timings). Include a small harness script that can be run locally to reproduce measurement steps.
 
 ## Dependencies
 
 - Story execution order: Phase 1 → Phase 2 → Phase 3 (US1 → US2 → US3 → US4 → US5 → US6) → Final Phase
 - Tasks marked `[P]` can run in parallel with unrelated code changes (e.g., tests, CI entries).
+
+- CLI parsing crate: `clap` (v3+) — use `clap`'s derive (`clap_derive`) instead of `structopt` (structopt's functionality is integrated into `clap`).
 
 ## Parallel execution examples
 
