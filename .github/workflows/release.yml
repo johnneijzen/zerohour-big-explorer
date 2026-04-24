@@ -1,14 +1,344 @@
-name: Release
+name: Release on tag
+
 on:
   push:
     tags:
-      - 'v*'
+      - '*'
+
 jobs:
-  release:
+  build_big_cli_linux:
+    name: Build big-cli (linux-musl)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build release artifacts
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v4
+        with:
+          path: |
+            target
+          key: ${{ runner.os }}-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - name: Install musl toolchain
         run: |
-          cargo build --workspace --release
-          # packaging steps would be added here
+          sudo apt-get update
+          sudo apt-get install -y musl-tools xz-utils
+          rustup target add x86_64-unknown-linux-musl
+
+      - name: Build big-cli (musl)
+        run: |
+          cargo build --manifest-path big-cli/Cargo.toml --release --target x86_64-unknown-linux-musl
+
+      - name: Package big-cli (linux)
+        run: |
+          BIN=target/x86_64-unknown-linux-musl/release/big-cli
+          mkdir -p release
+          strip "$BIN" || true
+          cp "$BIN" release/big-cli-linux
+          cd release && zip -r ../big-cli-linux.zip . && cd ..
+
+      - name: Upload big-cli-linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: big-cli-linux
+          path: big-cli-linux.zip
+
+  build_big_cli_windows:
+    name: Build big-cli (windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache cargo registry (windows)
+        uses: actions/cache@v4
+        with:
+          path: |
+            %USERPROFILE%/.cargo/registry
+            %USERPROFILE%/.cargo/git
+            C:\\Users\\runneradmin\\.cargo\\registry
+            C:\\Users\\runneradmin\\.cargo\\git
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo build (windows)
+        uses: actions/cache@v4
+        with:
+          path: |
+            target
+          key: ${{ runner.os }}-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - name: Build big-cli (windows)
+        run: |
+          cargo build --manifest-path big-cli/Cargo.toml --release
+
+      - name: Package big-cli (windows)
+        run: |
+          $bin = "target\release\big-cli.exe"
+          New-Item -ItemType Directory -Force -Path release | Out-Null
+          Copy-Item $bin -Destination release\big-cli.exe
+          cd release; Compress-Archive -Path * -DestinationPath ..\big-cli-windows.zip; cd ..
+
+      - name: Upload big-cli-windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: big-cli-windows
+          path: big-cli-windows.zip
+
+  build_big_tauri:
+    name: Build big-tauri (linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache pnpm and node_modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pnpm-store
+            big-tauri/node_modules
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v4
+        with:
+          path: |
+            target
+          key: ${{ runner.os }}-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install system dependencies (Linux)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            pkg-config \
+            libglib2.0-dev \
+            libgtk-3-dev \
+            libwebkit2gtk-4.1-dev || sudo apt-get install -y libwebkit2gtk-4.0-dev \
+            libappindicator3-dev \
+            librsvg2-dev
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
+
+      - name: Install frontend deps
+        run: |
+          cd big-tauri
+          pnpm install --frozen-lockfile || pnpm install
+
+      - name: Setup Rust for tauri
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - name: Build big-tauri (app bundle)
+        run: |
+          cd big-tauri
+          pnpm build
+          pnpm tauri build --target x86_64-unknown-linux-gnu || pnpm tauri build || true
+
+      - name: Package big-tauri output
+        run: |
+          cd big-tauri/target
+          mkdir -p release
+          # Collect common Linux bundles (AppImage / bundle folders) if created
+          find . -maxdepth 3 -type f -iname "*.AppImage" -print -exec cp {} ../../big-tauri-linux.AppImage \; || true
+          cd ../..
+          zip -r big-tauri-linux.zip big-tauri/target || true
+
+      - name: Upload big-tauri artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: big-tauri-linux
+          path: big-tauri-linux.zip
+
+  build_big_tauri_windows:
+    name: Build big-tauri (windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache pnpm and node_modules (windows)
+        uses: actions/cache@v4
+        with:
+          path: |
+            %USERPROFILE%/.pnpm-store
+            big-tauri\\node_modules
+            C:\\Users\\runneradmin\\.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      - name: Cache cargo registry (windows)
+        uses: actions/cache@v4
+        with:
+          path: |
+            %USERPROFILE%/.cargo/registry
+            %USERPROFILE%/.cargo/git
+            C:\\Users\\runneradmin\\.cargo\\registry
+            C:\\Users\\runneradmin\\.cargo\\git
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo build (windows)
+        uses: actions/cache@v4
+        with:
+          path: |
+            target
+          key: ${{ runner.os }}-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
+
+      - name: Install frontend deps
+        run: |
+          cd big-tauri
+          pnpm install --frozen-lockfile || pnpm install
+
+      - name: Setup Rust for tauri (MSVC)
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - name: Build big-tauri (windows)
+        shell: powershell
+        run: |
+          cd big-tauri
+          pnpm build
+          pnpm tauri build || true
+
+      - name: Package big-tauri output (windows)
+        shell: powershell
+        run: |
+          cd big-tauri
+          $out = "target\release\bundle"
+          New-Item -ItemType Directory -Force -Path release | Out-Null
+          if (Test-Path $out) {
+            Get-ChildItem -Path $out -Recurse -File | ForEach-Object { Copy-Item $_.FullName -Destination release -Force }
+          }
+          Compress-Archive -Path release\* -DestinationPath ..\big-tauri-windows.zip
+
+      - name: Upload big-tauri-windows
+        uses: actions/upload-artifact@v4
+        with:
+          name: big-tauri-windows
+          path: big-tauri-windows.zip
+
+  create_release:
+    name: Create GitHub release and upload artifacts
+    runs-on: ubuntu-latest
+    needs: [build_big_cli_linux, build_big_cli_windows, build_big_tauri, build_big_tauri_windows]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download big-cli linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: big-cli-linux
+
+      - name: Download big-cli windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: big-cli-windows
+
+      - name: Download big-tauri artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: big-tauri-linux
+
+      - name: Download big-tauri windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: big-tauri-windows
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          body: "Automated release for tag ${{ github.ref_name }}: `big-cli` and `big-tauri` artifacts"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload big-cli-linux
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: big-cli-linux.zip
+          asset_name: big-cli-linux.zip
+          asset_content_type: application/zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload big-cli-windows
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: big-cli-windows.zip
+          asset_name: big-cli-windows.zip
+          asset_content_type: application/zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload big-tauri-linux
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: big-tauri-linux.zip
+          asset_name: big-tauri-linux.zip
+          asset_content_type: application/zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload big-tauri-windows
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: big-tauri-windows.zip
+          asset_name: big-tauri-windows.zip
+          asset_content_type: application/zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
