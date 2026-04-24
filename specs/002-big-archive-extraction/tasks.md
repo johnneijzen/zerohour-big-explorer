@@ -5,6 +5,7 @@
 - [ ] T001 Initialize feature branch and workspace scaffolding in specs/002-big-archive-extraction
  - [x] T001 Initialize feature branch and workspace scaffolding in specs/002-big-archive-extraction
 - [ ] T002 [P] Add CI cargo test entry for feature in Cargo.toml (workspace root)
+ - [x] T002 [P] Add CI cargo test entry for feature in Cargo.toml (workspace root)
 - [ ] T003 Create feature integration test harness in tests/integration/big-archive-extraction.rs
  - [ ] T002 [P] Add CI cargo test entry for feature in Cargo.toml (workspace root)
  - [x] T003 Create feature integration test harness in tests/integration/big-archive-extraction.rs
@@ -36,6 +37,8 @@
  - [x] T017 [US2] Implement frontend Extract action and save dialog in big-tauri/src/lib/components/Extract.svelte
  - [ ] T018 [P] [US2] Integration test: request bytes via Tauri command and assert checksum in tests/integration/big-archive-extraction.rs (create harness/test stub before implementing Tauri command)
 
+ - [x] T018 [P] [US2] Integration test: request bytes via Tauri command and assert checksum in tests/integration/big-archive-extraction.rs (create harness/test stub before implementing Tauri command)
+
 **User Story 3 — Extract single file (CLI)**
 
  - [x] T019 [US3] Add `extract` command scaffolding in big-cli/src/commands/extract.rs
@@ -51,6 +54,13 @@
  - [ ] T036 [US4] Add Unpack/"Extract All" UI action and button in big-tauri/src/lib/components/Unpack.svelte
  - [ ] T037 [US4] Add `unpack_all` Tauri command in big-tauri/src-tauri/src/commands.rs to call `big-core::extract_all`
  - [ ] T038 [US4] Implement frontend flow: select output directory, confirm, call `unpack_all`, and show progress in big-tauri/src/lib/components/Unpack.svelte
+ - [ ] T039 [P] [US4] Add integration test for UI-triggered unpack: invoke `unpack_all` from UI test harness and assert files written in tests/integration/big-archive-extraction.rs
+
+ - [x] T039 [P] [US4] Add integration test for UI-triggered unpack: invoke `unpack_all` from UI test harness and assert files written in tests/integration/big-archive-extraction.rs
+
+ - [x] T036 [US4] Add Unpack/"Extract All" UI action and button in big-tauri/src/lib/components/Unpack.svelte
+ - [x] T037 [US4] Add `unpack_all` Tauri command in big-tauri/src-tauri/src/commands.rs to call `big-core::extract_all`
+ - [x] T038 [US4] Implement frontend flow: select output directory, confirm, call `unpack_all`, and show progress in big-tauri/src/lib/components/Unpack.svelte
  - [ ] T039 [P] [US4] Add integration test for UI-triggered unpack: invoke `unpack_all` from UI test harness and assert files written in tests/integration/big-archive-extraction.rs
 
 **User Story 5 — Pack directory into .BIG (CLI & library)**

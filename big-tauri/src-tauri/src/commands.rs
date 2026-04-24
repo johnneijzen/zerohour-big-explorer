@@ -87,3 +87,8 @@ pub fn append_file(
     big_core::pack::append_file_to_archive(&archive_path, &source, &target_archive_path, force)
         .map_err(|e| e.to_string())
 }
+
+#[tauri::command]
+pub fn unpack_all(archive_path: String, output_dir: String) -> Result<(), String> {
+    big_core::extract::extract_all(&archive_path, &output_dir).map_err(|e| e.to_string())
+}

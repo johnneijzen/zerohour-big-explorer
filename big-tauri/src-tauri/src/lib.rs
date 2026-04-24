@@ -22,6 +22,7 @@ pub fn run() {
             commands::extract_file_to_disk,
             commands::pack_directory,
             commands::append_file,
+            commands::unpack_all,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

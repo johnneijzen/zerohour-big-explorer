@@ -4,6 +4,7 @@
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
   import Extract from "$lib/components/ui/Extract.svelte";
+  import Unpack from "$lib/components/ui/Unpack.svelte";
   import { writable } from "svelte/store";
    import Append from "$lib/components/ui/Append.svelte";
 
@@ -77,6 +78,9 @@
       <Input id="archive" type="text" bind:value={$archive} placeholder="Select .BIG archive" />
       <!-- <Button on:click={chooseArchive}>Browse</Button> -->
       <button on:click={chooseArchive}>Open File</button>
+      {#if $archive}
+        <Unpack archive={$archive} />
+      {/if}
     </div>
   </div>
 
