@@ -112,7 +112,7 @@ pub fn append_file_to_archive<P: AsRef<std::path::Path>, Q: AsRef<std::path::Pat
     let archive_path = archive_path.as_ref();
     let source_file = source_file.as_ref();
 
-    let (_archive_meta, _index, mut entries) = crate::parser::parse_archive(archive_path)?;
+    let (_archive_meta, _index, entries) = crate::parser::parse_archive(archive_path)?;
 
     // Check collision
     if entries.iter().any(|e| e.name == archive_target_path) && !force {

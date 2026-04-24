@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 
-use big_core::{extract::stream_entry_to_writer, paths::safe_join, parser::parse_archive};
+use big_core::{extract::stream_entry_to_writer, parser::parse_archive, paths::safe_join};
 
 fn write_simple_big(path: &PathBuf) -> std::io::Result<()> {
     let mut v = Vec::new();
