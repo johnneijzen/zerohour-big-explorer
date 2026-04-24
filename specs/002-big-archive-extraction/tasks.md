@@ -28,15 +28,13 @@
  - [x] T011 [US1] Render clickable file list in big-tauri/src/lib/ui/file_list.svelte
  - [x] T012 [US1] Implement Tauri command to fetch archive index in big-tauri/src-tauri/src/commands.rs
  - [x] T013 [US1] Wire Tauri command to `big-core` index iterator in big-tauri/src-tauri/src/commands.rs
-- [ ] T014 [US1] Add integration test: open archive and assert file list loads in tests/integration/big-archive-extraction.rs
+- [x] T014 [US1] Add integration test: open archive and assert file list loads in tests/integration/big-archive-extraction.rs
 
 **User Story 2 — Extract a single file (UI)**
 
  - [x] T015 [US2] Add `extract_file_bytes` Tauri command in big-tauri/src-tauri/src/commands.rs
  - [x] T016 [US2] Add `extract_file_to_disk` Tauri command in big-tauri/src-tauri/src/commands.rs
  - [x] T017 [US2] Implement frontend Extract action and save dialog in big-tauri/src/lib/components/Extract.svelte
- - [ ] T018 [P] [US2] Integration test: request bytes via Tauri command and assert checksum in tests/integration/big-archive-extraction.rs (create harness/test stub before implementing Tauri command)
-
  - [x] T018 [P] [US2] Integration test: request bytes via Tauri command and assert checksum in tests/integration/big-archive-extraction.rs (create harness/test stub before implementing Tauri command)
 
 **User Story 3 — Extract single file (CLI)**
@@ -76,16 +74,15 @@
 
 ## Final Phase — Polish & Cross-Cutting Concerns
 
-- [ ] T030 Add documentation updates: update README.md and specs/002-big-archive-extraction/quickstart.md with usage examples for `big-cli` and Tauri commands
  - [x] T030 Add documentation updates: update README.md and specs/002-big-archive-extraction/quickstart.md with usage examples for `big-cli` and Tauri commands
  - [x] T031 Run workspace formatting and linting (rustfmt) and ensure tests pass
-- [ ] T032 Prepare release notes entry and changelog fragment in docs/
+- [x] T032 Prepare release notes entry and changelog fragment in docs/
 
 ## Additional Tasks (from spec coverage)
 
  - [x] T033 [US5] Add `pack_directory` Tauri command in big-tauri/src-tauri/src/commands.rs
-- [ ] T034 [US5] Add Pack UI in big-tauri/src/lib/components/Pack.svelte
- - [P] T035 [US2] Add WAV preview latency/performance test in tests/integration/big-archive-perf.rs
+- [x] T034 [US5] Add Pack UI in big-tauri/src/lib/components/Pack.svelte
+ - [x] T035 [P] [US2] Add WAV preview latency/performance test in tests/integration/big-archive-perf.rs
 
 	- Acceptance: use a canonical 50MB WAV sample (place under `specs/002-big-archive-extraction/samples/50mb.wav`), invoke `big-core::extract_file` (or `extract_file_bytes`) and measure time from request start to when audio playback can start (decode+start). The CI job SHOULD record timings as an artifact but NOT fail solely on timing variance. The test MUST be runnable locally; it is enabled when `RUN_PERF=1` and will produce a JSON timings artifact when run.
 
