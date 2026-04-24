@@ -8,7 +8,7 @@
 
 ## Overview *(mandatory)*
 
-Extend the existing BIG Explorer to allow users to interactively browse archive contents in the UI, extract single files (UI + CLI), and unpack entire archives from the CLI while preserving directory structure. Preview features will be implemented in a later phase.
+Extend the existing BIG Explorer to allow users to interactively browse archive contents in the UI, extract single files (UI + CLI), and unpack entire archives (CLI + UI) while preserving directory structure. Preview features will be implemented in a later phase.
 
 ## Clarifications
 
@@ -20,7 +20,7 @@ Extend the existing BIG Explorer to allow users to interactively browse archive 
 
 - Click and inspect files in the UI
 - Extract a single file (UI + CLI)
-- Unpack/Extract entire archive (CLI)
+ - Unpack/Extract entire archive (CLI + UI)
 - Pack directory back into a `.BIG` archive (CLI + UI)
 - Append a single file into an existing `.BIG` archive (CLI + UI)
 
@@ -176,6 +176,9 @@ fn pack_directory(path: String, input_dir: String, output: String) -> Result<(),
 
 #[tauri::command]
 fn append_file(path: String, source: String, target_archive_path: String, force: bool) -> Result<(), String>;
+
+#[tauri::command]
+fn unpack_archive(path: String, output: String) -> Result<(), String>;
 ```
 
 Behavior:
@@ -204,6 +207,7 @@ Behavior:
 ## Functional Requirements *(testable)*
  
 - FR-001: CLI can unpack entire archive — run `big-cli unpack` and verify files written and structure preserved.
+- FR-001b: UI can unpack entire archive via `unpack_archive` Tauri command — the user can choose an output folder and the frontend triggers unpacking, preserving paths and preventing path traversal.
 - FR-002: CLI can extract a single file — run `big-cli extract` and verify the file matches `extract_file` output (checksum equality).
 - FR-003: Tauri UI can request file bytes and play WAV previews without freezing the UI (see performance criteria).
 - FR-004: Extracted files cannot be written outside the chosen output directory (path traversal prevented).
@@ -238,6 +242,6 @@ Behavior:
 - `big-tauri` exposes Tauri commands for extraction and preview; UI supports clickable file list and WAV playback.
  - `big-core` also exports `pack_directory` and `append_file_to_archive` for packing and appending.
  - `big-cli` also implements `pack` and `append` commands.
- - `big-tauri` exposes `pack_directory` and `append_file` Tauri commands and UI actions to pack/append from the frontend.
+ - `big-tauri` exposes `pack_directory`, `append_file`, and `unpack_archive` Tauri commands and UI actions to pack/append/unpack from the frontend.
 
 <!-- End of spec.md for BIG Archive Interactive Browsing & Extraction -->

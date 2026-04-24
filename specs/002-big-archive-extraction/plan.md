@@ -6,7 +6,7 @@
 **Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/plan-template.md` for the execution workflow.
 
 ## Summary
-Add interactive browsing, single-file extraction (UI + CLI), full-archive unpacking (CLI), packing a directory into a .BIG archive, and appending a single file to an existing .BIG archive. Implementation will re-use `big-core` parsing/IO primitives; `big-cli` will provide `list`, `extract`, `unpack`, `pack`, and `append` commands; `big-tauri` will expose Tauri commands to call the same `big-core` APIs from the UI.
+Add interactive browsing, single-file extraction (UI + CLI), full-archive unpacking (CLI), packing a directory into a .BIG archive, and appending a single file to an existing .BIG archive. Implementation will re-use `big-core` parsing/IO primitives; `big-cli` will provide `list`, `extract`, `unpack`, `pack`, and `append` commands; `big-tauri` will expose Tauri commands to call the same `big-core` APIs from the UI. The frontend UI must also implement interactive `extract` and `unpack` features so users can extract single files from the explorer and perform full-archive unpacking from the UI.
 
 ## Technical Context
 
@@ -85,6 +85,9 @@ big-tauri/
     ├── main.rs
     ├── lib.rs
     └── commands.rs    # Tauri command bindings for extract/pack/append
+  - frontend/           # Svelte UI; add explorer actions for extract/unpack
+    - routes/           # UI routes or components for archive browsing
+    - components/       # Add `ExtractButton`, `UnpackDialog` components
 
 tests/
 ├── big-core/ (integration tests)

@@ -7,3 +7,7 @@ members = [
 ]
 resolver = "3"
 
+[workspace.metadata.ci]
+# CI task to run feature integration tests for specs/002-big-archive-extraction
+feature_002_big_archive_extraction = "cargo test --test big-archive-extraction --workspace --verbose"
+

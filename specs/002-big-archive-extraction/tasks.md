@@ -48,6 +48,11 @@
  - [x] T023 [US4] Implement `big-cli unpack` to call `big-core::extract_all` and recreate folder hierarchy in big-cli/src/commands/pack.rs
  - [x] T024 [US4] Add progress output and test for `big-cli unpack` in tests/integration/big-archive-extraction.rs (add test stub before implementation)
 
+ - [ ] T036 [US4] Add Unpack/"Extract All" UI action and button in big-tauri/src/lib/components/Unpack.svelte
+ - [ ] T037 [US4] Add `unpack_all` Tauri command in big-tauri/src-tauri/src/commands.rs to call `big-core::extract_all`
+ - [ ] T038 [US4] Implement frontend flow: select output directory, confirm, call `unpack_all`, and show progress in big-tauri/src/lib/components/Unpack.svelte
+ - [ ] T039 [P] [US4] Add integration test for UI-triggered unpack: invoke `unpack_all` from UI test harness and assert files written in tests/integration/big-archive-extraction.rs
+
 **User Story 5 — Pack directory into .BIG (CLI & library)**
 
  - [x] T025 [US5] Implement `pack_directory` wiring in big-cli/src/commands/pack.rs to call `big-core::pack_directory`
