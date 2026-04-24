@@ -66,7 +66,10 @@ Independent test: count entries and verify preserved folder hierarchy and sample
 
 ```rust
 pub struct BigFileEntry {
-    pub name: String,
+    // Full archive-internal path (e.g. "Data/Audio/music/file.wav")
+    pub path: String,
+    // Optional display name derived from `path` when needed
+    pub name: Option<String>,
     pub offset: u64,
     pub size: u64,
 }
@@ -79,6 +82,16 @@ pub fn extract_file(
     archive_path: &str,
     file_entry: &BigFileEntry
 ) -> Result<Vec<u8>, BigError>;
+
+// NOTE: `extract_file` is a convenience API intended for reasonably
+// small files or previews. For large files and streaming extraction,
+// prefer the streaming API below to avoid buffering entire files into memory.
+
+pub fn stream_extract_to_writer(
+    archive_path: &str,
+    file_entry: &BigFileEntry,
+    writer: &mut dyn std::io::Write,
+) -> Result<(), BigError>;
 
 pub fn extract_to_path(
     archive_path: &str,
@@ -103,6 +116,16 @@ pub fn append_file_to_archive(
     source_file_path: &str,
     archive_target_path: &str,
 ) -> Result<(), BigError>;
+
+// Atomicity contract: `append_file_to_archive` MUST be atomic from the
+// caller perspective. Implementations SHOULD follow one of these strategies:
+//  - Create a new temporary archive file with the appended entry and atomically
+//    rename it over the original (recommended for correctness), OR
+//  - Acquire an exclusive lock, append data and update the index, then fsync
+//    data and index together before releasing the lock. Document the chosen
+//    strategy in the function docs and add tests for mid-write failure/recovery.
+// Tests verifying atomicity and failure recovery MUST be added to the test
+// matrix for this feature.
 
 // Behavior note: If `archive_target_path` already exists in the archive, the function MUST
 // return an error and make no modification. Overwrite semantics must be opt-in (e.g. a

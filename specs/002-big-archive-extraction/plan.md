@@ -10,11 +10,7 @@ Add interactive browsing, single-file extraction (UI + CLI), full-archive unpack
 
 ## Technical Context
 
-<!--
-  ACTION REQUIRED: Replace the content in this section with the technical details
-  for the project. The structure here is presented in advisory capacity to guide
-  the iteration process.
--->
+<!-- Technical context intentionally summarized above; replace with more details if needed. -->
 
 **Language/Version**: Rust (workspace crates use edition = "2024"). Use the project's existing toolchain; prefer the stable Rust toolchain that supports edition 2024.  
 **Primary Dependencies**: `big-core` (internal), `tauri` (big-tauri), `clap` (big-cli uses `clap` v3+ with derive), `serde`, `walkdir`, `anyhow`, `tauri` plugins (dialog, fs).  
