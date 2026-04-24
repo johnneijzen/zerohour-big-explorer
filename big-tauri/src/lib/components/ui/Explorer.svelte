@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { invoke } from '@tauri-apps/api/core'
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
@@ -7,13 +8,24 @@
   const archive = writable("");
   const entries = writable<Array<any>>([]);
 
-  // Use plugin-dialog open as requested (dynamic import keeps bundler happy)
+  // Robust runtime-aware chooseArchive: prefer global __TAURI__ when available,
+  // fall back to dynamic plugin import to keep bundlers/SSR happy.
   async function chooseArchive() {
     try {
-      const { open } = await import('@tauri-apps/plugin-dialog');
-      const sel = await open({ multiple: false, directory: false, filters: [{ name: 'BIG', extensions: ['big'] }], title: 'Select .BIG archive' });
+      const globalOpen = (globalThis as any).__TAURI__?.dialog?.open;
+      const dialogOpen = globalOpen ?? (await import('@tauri-apps/plugin-dialog')).open;
+
+      const sel = await dialogOpen({
+        multiple: false,
+        filters: [{ 
+          name: 'BIG', 
+          extensions: ['big'] 
+        }],
+        title: 'Select .BIG archive'
+      });
+
       const path = Array.isArray(sel) ? sel[0] : sel;
-      console.log('plugin-dialog selected', path);
+      console.log('dialog selected', path);
       if (path) {
         archive.set(path as string);
         await listArchive(path as string);
@@ -26,10 +38,16 @@
 
   async function listArchive(path: string) {
     try {
-      // Use dynamic import for the runtime invoke to avoid SSR bundling problems
-      const tauriPath = ['@tauri-apps','/api/tauri'].join('');
-      const { invoke } = await import(tauriPath);
-      const result = await invoke('list_archive', { archive_path: path, filter: null });
+      // Prefer runtime global invoke when available (Tauri runtime),
+      // otherwise use a literal dynamic import so the bundler can resolve it.
+      const globalInvoke = (globalThis as any).__TAURI__?.invoke;
+      if (typeof globalInvoke === 'function') {
+        const result = await globalInvoke('list_archive', { archivePath: path, filter: null });
+        entries.set(result as any[]);
+        return;
+      }
+      
+      const result = await invoke('list_archive', { archivePath: path, filter: null });
       entries.set(result as any[]);
     } catch (err) {
       console.error('listArchive error', err);
@@ -51,7 +69,8 @@
     <Label for="archive">BIG Archive</Label>
     <div class="flex gap-2 w-full">
       <Input id="archive" type="text" bind:value={$archive} placeholder="Select .BIG archive" />
-      <Button on:click={chooseArchive}>Browse</Button>
+      <!-- <Button on:click={chooseArchive}>Browse</Button> -->
+      <button onclick={chooseArchive}>Open File</button>
     </div>
   </div>
 
