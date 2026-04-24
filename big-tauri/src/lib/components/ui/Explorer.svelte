@@ -3,7 +3,10 @@
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
+  import Extract from "$lib/components/ui/Extract.svelte";
+  import Unpack from "$lib/components/ui/Unpack.svelte";
   import { writable } from "svelte/store";
+   import Append from "$lib/components/ui/Append.svelte";
 
   const archive = writable("");
   const entries = writable<Array<any>>([]);
@@ -42,12 +45,16 @@
       // otherwise use a literal dynamic import so the bundler can resolve it.
       const globalInvoke = (globalThis as any).__TAURI__?.invoke;
       if (typeof globalInvoke === 'function') {
-        const result = await globalInvoke('list_archive', { archivePath: path, filter: null });
+        const args = { archivePath: path, filter: null };
+        console.debug('invoke list_archive args (global):', args);
+        const result = await globalInvoke('list_archive', args);
         entries.set(result as any[]);
         return;
       }
       
-      const result = await invoke('list_archive', { archivePath: path, filter: null });
+      const args = { archivePath: path, filter: null };
+      console.debug('invoke list_archive args:', args);
+      const result = await invoke('list_archive', args);
       entries.set(result as any[]);
     } catch (err) {
       console.error('listArchive error', err);
@@ -67,10 +74,13 @@
 
   <div class="grid w-full max-w-sm items-center gap-1.5 mb-4">
     <Label for="archive">BIG Archive</Label>
-    <div class="flex gap-2 w-full">
+      <div class="flex gap-2 w-full">
       <Input id="archive" type="text" bind:value={$archive} placeholder="Select .BIG archive" />
       <!-- <Button on:click={chooseArchive}>Browse</Button> -->
-      <button onclick={chooseArchive}>Open File</button>
+      <button on:click={chooseArchive}>Open File</button>
+      {#if $archive}
+        <Unpack archive={$archive} />
+      {/if}
     </div>
   </div>
 
@@ -86,6 +96,9 @@
             <div class="font-medium">{e.name}</div>
             <div class="muted">{e.length} bytes {e.compressed ? '(compressed)' : ''}</div>
           </div>
+            <div style="margin-left:auto">
+              <Extract archive={$archive} name={e.name} />
+            </div>
         </div>
       {/if}
     {/each}

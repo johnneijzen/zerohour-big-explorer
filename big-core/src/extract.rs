@@ -3,6 +3,7 @@ use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::Path;
 
 use crate::models::Entry;
+use crate::paths;
 
 /// Stream the payload for `entry` from `r` into `w`.
 pub fn stream_entry_to_writer<R: Read + Seek, W: Write>(
@@ -79,5 +80,35 @@ pub fn extract_entry_to_path_with_progress<P: AsRef<Path>>(
     tmp.sync_all()?;
 
     fs::rename(&tmp_path, dest_path)?;
+    Ok(())
+}
+
+/// Extract an entry into memory and return its bytes.
+pub fn extract_file<P: AsRef<Path>>(archive_path: P, entry: &Entry) -> anyhow::Result<Vec<u8>> {
+    let mut f = File::open(archive_path.as_ref())?;
+    f.seek(SeekFrom::Start(entry.offset))?;
+    let mut buf = vec![0u8; entry.length as usize];
+    f.read_exact(&mut buf)?;
+    Ok(buf)
+}
+
+/// Extract all entries from an archive into `output_dir`, preserving paths.
+pub fn extract_all<P: AsRef<Path>, Q: AsRef<Path>>(
+    archive_path: P,
+    output_dir: Q,
+) -> anyhow::Result<()> {
+    let archive_p = archive_path.as_ref();
+    let output_p = output_dir.as_ref();
+
+    let (_archive, _index, entries) = crate::parser::parse_archive(archive_p)?;
+
+    for entry in entries.iter() {
+        let dest = paths::safe_join(output_p, &entry.name)?;
+        if let Some(parent) = dest.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        extract_entry_to_path_with_progress(archive_p, entry, dest.as_path(), None)?;
+    }
+
     Ok(())
 }
