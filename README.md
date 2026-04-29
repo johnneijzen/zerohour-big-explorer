@@ -14,7 +14,9 @@ Getting started
 Releases: 
 
 https://github.com/johnneijzen/zerohour-big-explorer/releases/
+
 CLI: Windows and Linux Working
+
 GUI: Windows only working for some reason linux is bugging out with white screen
 
 Gui Interface 
