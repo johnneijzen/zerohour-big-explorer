@@ -14,10 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6.0.2
 
       - name: Cache cargo registry
-        uses: actions/cache@v4
+        uses: actions/cache@v5.0.5
         with:
           path: |
             ~/.cargo/registry
@@ -25,7 +25,7 @@ jobs:
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Cache cargo build
-        uses: actions/cache@v4
+        uses: actions/cache@v5.0.5
         with:
           path: |
             target
@@ -53,7 +53,7 @@ jobs:
           cd release && zip -r ../big-cli-linux.zip . && cd ..
 
       - name: Upload big-cli-linux artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: big-cli-linux
           path: big-cli-linux.zip
@@ -63,10 +63,10 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6.0.2
 
       - name: Cache cargo registry (windows)
-        uses: actions/cache@v4
+        uses: actions/cache@v5.0.5
         with:
           path: |
             %USERPROFILE%/.cargo/registry
@@ -76,7 +76,7 @@ jobs:
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Cache cargo build (windows)
-        uses: actions/cache@v4
+        uses: actions/cache@v5.0.5
         with:
           path: |
             target
@@ -97,7 +97,7 @@ jobs:
           cd release; Compress-Archive -Path * -DestinationPath ..\big-cli-windows.zip; cd ..
 
       - name: Upload big-cli-windows artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: big-cli-windows
           path: big-cli-windows.zip
@@ -107,23 +107,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6.0.2
 
       - name: install dependencies (ubuntu only)
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libssl-dev libxdo-dev patchelf libfuse2 xdg-utils
 
-      - name: Cache pnpm and node_modules
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.pnpm-store
-            big-tauri/node_modules
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-
       - name: Cache cargo registry
-        uses: actions/cache@v4
+        uses: actions/cache@v5.0.5
         with:
           path: |
             ~/.cargo/registry
@@ -131,16 +123,17 @@ jobs:
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Cache cargo build
-        uses: actions/cache@v4
+        uses: actions/cache@v5.0.5
         with:
           path: |
             target
           key: ${{ runner.os }}-target-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6.4.0
         with:
           node-version: '24'
+          cache: 'pnpm'
 
       - name: Enable pnpm
         run: |
@@ -168,34 +161,29 @@ jobs:
         run: |
           cd big-tauri
           mkdir -p release
-          # Support both subcrate-local target and workspace-level target directories
-          if [ -d target ]; then
-            TARGET_DIR="target"
-          elif [ -d ../target ]; then
-            TARGET_DIR="../target"
-          else
-            TARGET_DIR=""
-          fi
+          # Robustly search and collect AppImage / deb bundles from likely target locations
+          CANDIDATES=("target" "../target" "target/x86_64-unknown-linux-gnu/release/bundle" "../target/x86_64-unknown-linux-gnu/release/bundle")
+          for P in "${CANDIDATES[@]}"; do
+            if [ -d "$P" ]; then
+              find "$P" -maxdepth 6 -type f \( -iname "*.AppImage" -o -iname "*.deb" \) -print -exec cp -f {} release/ \; || true
+            fi
+          done
 
-          if [ -n "$TARGET_DIR" ]; then
-            rm -rf release/* || true
-            # Copy common bundles (AppImage / deb) into release/ if present
-            find "$TARGET_DIR" -maxdepth 4 -type f \( -iname "*.AppImage" -o -iname "*.deb" \) -print -exec cp {} release/ \; || true
-            # If the build produced a local target folder, include the whole target tree
-            if [ "$TARGET_DIR" = "target" ]; then
-              zip -r ../big-tauri-linux.zip target || true
+          if [ -n "$(ls -A release 2>/dev/null)" ]; then
+            zip -r ../big-tauri-linux.zip release || true
+          else
+            echo "No bundles found in expected targets; attempting repo-wide search and packaging placeholder"
+            find .. -maxdepth 6 -type f \( -iname "*.AppImage" -o -iname "*.deb" \) -print -exec cp -f {} release/ \; || true
+            if [ -n "$(ls -A release 2>/dev/null)" ]; then
+              zip -r ../big-tauri-linux.zip release || true
             else
-              # Workspace-level target: zip the collected release files and place archive at repo root
+              echo "tauri build failed on CI; no artifacts produced." > release/README.txt
               zip -r ../big-tauri-linux.zip release || true
             fi
-          else
-            echo "No big-tauri/target or ../target directory; tauri build likely failed. Creating placeholder zip."
-            echo "tauri build failed on CI; no artifacts produced." > release/README.txt
-            zip -r ../big-tauri-linux.zip release || true
           fi
 
       - name: Upload big-tauri artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: big-tauri-linux
           path: big-tauri-linux.zip
@@ -205,19 +193,10 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Cache pnpm and node_modules (windows)
-        uses: actions/cache@v4
-        with:
-          path: |
-            %USERPROFILE%/.pnpm-store
-            big-tauri\\node_modules
-            C:\\Users\\runneradmin\\.pnpm-store
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+        uses: actions/checkout@v6.0.2
 
       - name: Cache cargo registry (windows)
-        uses: actions/cache@v4
+        uses: actions/cache@v5.0.5
         with:
           path: |
             %USERPROFILE%/.cargo/registry
@@ -227,16 +206,17 @@ jobs:
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Cache cargo build (windows)
-        uses: actions/cache@v4
+        uses: actions/cache@v5.0.5
         with:
           path: |
             target
           key: ${{ runner.os }}-target-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6.4.0
         with:
           node-version: '24'
+          cache: 'pnpm'
 
       - name: Enable pnpm
         run: |
@@ -269,19 +249,29 @@ jobs:
         shell: powershell
         run: |
           cd big-tauri
-          $out = "target\release\bundle"
           New-Item -ItemType Directory -Force -Path release | Out-Null
-          if (Test-Path $out) {
-            Get-ChildItem -Path $out -Recurse -File | ForEach-Object { Copy-Item $_.FullName -Destination release -Force }
-            Compress-Archive -Path release\* -DestinationPath ..\big-tauri-windows.zip
-          } else {
-            Write-Host "No target bundle found; creating placeholder zip."
-            "tauri build failed on CI; no artifacts produced." | Out-File -FilePath release\README.txt -Encoding utf8
-            Compress-Archive -Path release\* -DestinationPath ..\big-tauri-windows.zip
+          $candidates = @(
+            "target\release\bundle",
+            "..\target\release\bundle",
+            "..\target\x86_64-pc-windows-msvc\release\bundle",
+            "..\target\release\bundle"
+          )
+          $copied = $false
+          foreach ($p in $candidates) {
+            if (Test-Path $p) {
+              Get-ChildItem -Path $p -Recurse -File | ForEach-Object { Copy-Item $_.FullName -Destination release -Force }
+              $copied = $true
+            }
           }
+          if (-not $copied) {
+            Write-Host "No target bundle found in expected paths; attempting broader repo search"
+            $matches = Get-ChildItem -Path .. -Recurse -File -Include *.msi,*.exe,*.zip,*.AppImage -ErrorAction SilentlyContinue
+            foreach ($m in $matches) { Copy-Item $m.FullName -Destination release -Force }
+          }
+          Compress-Archive -Path release\* -DestinationPath ..\big-tauri-windows.zip
 
       - name: Upload big-tauri-windows
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: big-tauri-windows
           path: big-tauri-windows.zip
@@ -291,74 +281,34 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build_big_cli_linux, build_big_cli_windows, build_big_tauri, build_big_tauri_windows]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
       - name: Download big-cli linux artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7 
         with:
           name: big-cli-linux
 
       - name: Download big-cli windows artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7 
         with:
           name: big-cli-windows
 
       - name: Download big-tauri artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7 
         with:
           name: big-tauri-linux
 
       - name: Download big-tauri windows artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7 
         with:
           name: big-tauri-windows
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
+      - name: Create Release and upload assets
+        uses: ncipollo/release-action@v1
         with:
-          tag_name: ${{ github.ref_name }}
-          release_name: Release ${{ github.ref_name }}
-          body: "Automated release for tag ${{ github.ref_name }}: `big-cli` and `big-tauri` artifacts"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload big-cli-linux
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: big-cli-linux.zip
-          asset_name: big-cli-linux.zip
-          asset_content_type: application/zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload big-cli-windows
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: big-cli-windows.zip
-          asset_name: big-cli-windows.zip
-          asset_content_type: application/zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload big-tauri-linux
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: big-tauri-linux.zip
-          asset_name: big-tauri-linux.zip
-          asset_content_type: application/zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload big-tauri-windows
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: big-tauri-windows.zip
-          asset_name: big-tauri-windows.zip
-          asset_content_type: application/zip
+          tag: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: "Automated release for tag ${{ github.ref_name }}: big-cli and big-tauri artifacts"
+          artifacts: "big-cli-linux.zip,big-cli-windows.zip,big-tauri-linux.zip,big-tauri-windows.zip"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
