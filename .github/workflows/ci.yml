@@ -12,6 +12,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6.0.2
+
       - name: Install system dependencies (Linux)
         run: |
           sudo apt-get update
@@ -22,8 +23,10 @@ jobs:
             libwebkit2gtk-4.1-dev || sudo apt-get install -y libwebkit2gtk-4.0-dev \
             libappindicator3-dev \
             librsvg2-dev
+
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
+
       - name: Cache cargo registry
         uses: actions/cache@v5.0.5
         with:
@@ -31,29 +34,37 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
           key: '${{ runner.os }}-cargo-${{ hashFiles(''**/Cargo.lock'') }}'
+
       - name: Cache cargo build
-        uses: actions/cache@v5
+        uses: actions/cache@v5.0.5
         with:
           path: target
           key: '${{ runner.os }}-target-${{ hashFiles(''**/Cargo.lock'') }}'
+
       - name: Check formatting
         run: cargo fmt --all -- --check
       - name: Run clippy
         run: >-
-          cargo clippy --workspace --exclude big-tauri --all-targets -- -D
-          warnings
+          cargo clippy --workspace --exclude big-tauri --all-targets -- -D warnings
+
       - name: Build Rust workspace
-        run: cargo build --workspace --all-targets --verbose
+        run: cargo build --workspace --all-targets
+
       - name: Run tests
-        run: cargo test --workspace --all --verbose
+        run: cargo test --workspace --all
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v5
+        with:
+          version: 10
+
       - name: Setup Node
         uses: actions/setup-node@v6.4.0
         with:
           node-version: '24'
-      - name: Enable pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@latest --activate
+          cache: 'pnpm'
+          cache-dependency-path: big-tauri/pnpm-lock.yaml
+
       - name: Build big-tauri frontend
         working-directory: big-tauri
         run: |
