@@ -11,6 +11,11 @@ Getting started
 1. Install prerequisites (see Tauri docs).
 2. Build and run with the standard Tauri workflow.
 
+Releases: 
+https://github.com/johnneijzen/zerohour-big-explorer/releases/
+CLI: Windows and Linux Working
+GUI: Windows only working for some reason linux is bugging out with white screen
+
 Gui Interface 
 ![GUI Pic](./page/image/gui.webp)
 
