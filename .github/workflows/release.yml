@@ -139,6 +139,7 @@ jobs:
         with:
           node-version: '24'
           cache: 'pnpm'
+          cache-dependency-path: big-tauri/pnpm-lock.yaml
 
       - name: Install frontend deps
         run: |
@@ -222,6 +223,7 @@ jobs:
         with:
           node-version: '24'
           cache: 'pnpm'
+          cache-dependency-path: big-tauri/pnpm-lock.yaml
 
       - name: Install frontend deps
         run: |
