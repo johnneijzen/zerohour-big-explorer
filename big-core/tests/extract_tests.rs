@@ -5,84 +5,46 @@ use std::path::PathBuf;
 use big_core::{extract_entry_to_path, parse_archive};
 
 fn write_test_big_with_payload(path: &PathBuf) -> std::io::Result<()> {
-    let mut v = Vec::new();
-    // header: magic, version, index_offset, index_count
-    v.extend_from_slice(b"BIG\0");
-    v.extend_from_slice(&1u32.to_le_bytes());
-
-    // placeholder index_offset; we'll compute after building index
-    let index_offset_pos = v.len();
-    v.extend_from_slice(&0u64.to_le_bytes());
-
-    // index_count = 2
-    v.extend_from_slice(&2u32.to_le_bytes());
-
-    // build index in separate buffer
-    let mut idx = Vec::new();
-
-    // payloads
+    // Build a native BIGF archive with two payloads.
     let payload1 = b"AAAAAAAAAA"; // 10 bytes
     let payload2 = b"BBBBBBBBBBBBBBBBBBBB"; // 20 bytes
 
-    // entry1 metadata
     let name1 = b"file1.bin";
-    idx.extend_from_slice(&(name1.len() as u16).to_le_bytes());
-    idx.extend_from_slice(name1);
-    let offset1 = 0u64; // placeholder
-    idx.extend_from_slice(&offset1.to_le_bytes());
-    idx.extend_from_slice(&(payload1.len() as u64).to_le_bytes());
-    idx.push(0u8);
-    idx.push(0u8); // type len
-
-    // entry2 metadata
     let name2 = b"file2.bin";
-    idx.extend_from_slice(&(name2.len() as u16).to_le_bytes());
-    idx.extend_from_slice(name2);
-    let offset2 = 0u64; // placeholder
-    idx.extend_from_slice(&offset2.to_le_bytes());
-    idx.extend_from_slice(&(payload2.len() as u64).to_le_bytes());
-    idx.push(0u8);
-    idx.push(0u8);
 
-    // compute index_offset: current header length
-    let index_offset = v.len() as u64;
-    // replace placeholder
-    let index_offset_bytes = index_offset.to_le_bytes();
-    v[index_offset_pos..(index_offset_pos + 8)].copy_from_slice(&index_offset_bytes);
+    // compute file headers region length
+    let file_headers_region = (4 + 4 + name1.len() + 1) + (4 + 4 + name2.len() + 1);
+    let header_size = 16 + file_headers_region as u64 + 8;
+    let payload_start = header_size;
 
-    // append index
-    v.extend_from_slice(&idx);
+    let offset1 = payload_start;
+    let offset2 = payload_start + payload1.len() as u64;
+    let archive_size = payload_start + payload1.len() as u64 + payload2.len() as u64;
 
-    // payload offsets start here
-    let _payloads_start = v.len() as u64;
-    // set offsets in index (we know their positions: first entry offset is at index_offset + name1_len+2? easier to rebuild )
+    let mut v = Vec::new();
+    v.extend_from_slice(b"BIGF");
+    v.extend_from_slice(&(archive_size as u32).to_le_bytes());
+    v.extend_from_slice(&(2u32).to_be_bytes());
+    v.extend_from_slice(&(header_size as u32).to_be_bytes());
 
-    // For simplicity, append payloads and then rewrite the offsets directly in the buffer.
-    let payload1_offset = v.len() as u64;
+    // entry1: offset (BE u32), length (BE u32), name, null
+    v.extend_from_slice(&(offset1 as u32).to_be_bytes());
+    v.extend_from_slice(&(payload1.len() as u32).to_be_bytes());
+    v.extend_from_slice(name1);
+    v.push(0u8);
+
+    // entry2
+    v.extend_from_slice(&(offset2 as u32).to_be_bytes());
+    v.extend_from_slice(&(payload2.len() as u32).to_be_bytes());
+    v.extend_from_slice(name2);
+    v.push(0u8);
+
+    // trailing 8 bytes
+    v.extend_from_slice(&[0u8; 8]);
+
+    // payloads
     v.extend_from_slice(payload1);
-    let payload2_offset = v.len() as u64;
     v.extend_from_slice(payload2);
-
-    // Now patch offsets in the index area: find offsets by scanning
-    let mut cursor = index_offset as usize;
-    // entry1: name_len(2)
-    let name1_len = u16::from_le_bytes([v[cursor], v[cursor + 1]]) as usize;
-    cursor += 2;
-    cursor += name1_len; // name
-    // write payload1_offset
-    let off_bytes = payload1_offset.to_le_bytes();
-    v[cursor..(cursor + 8)].copy_from_slice(&off_bytes);
-    cursor += 8;
-    // skip length (8) + compressed(1) + type_len(1)
-    cursor += 8 + 1 + 1;
-
-    // entry2: name_len
-    let name2_len = u16::from_le_bytes([v[cursor], v[cursor + 1]]) as usize;
-    cursor += 2;
-    cursor += name2_len;
-    // write payload2_offset
-    let off_bytes2 = payload2_offset.to_le_bytes();
-    v[cursor..(cursor + 8)].copy_from_slice(&off_bytes2);
 
     let mut f = File::create(path)?;
     f.write_all(&v)?;

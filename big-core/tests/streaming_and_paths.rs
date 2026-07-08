@@ -5,40 +5,31 @@ use std::path::PathBuf;
 use big_core::{extract::stream_entry_to_writer, parser::parse_archive, paths::safe_join};
 
 fn write_simple_big(path: &PathBuf) -> std::io::Result<()> {
-    let mut v = Vec::new();
-    v.extend_from_slice(b"BIG\0");
-    v.extend_from_slice(&1u32.to_le_bytes());
-
-    // placeholder index_offset
-    let index_offset_pos = v.len();
-    v.extend_from_slice(&0u64.to_le_bytes());
-    v.extend_from_slice(&1u32.to_le_bytes()); // one entry
-
-    // build index
-    let mut idx = Vec::new();
+    // Build a native BIGF archive with a single payload
     let payload = b"HELLOWORLD"; // 10 bytes
     let name = b"greeting.txt";
-    idx.extend_from_slice(&(name.len() as u16).to_le_bytes());
-    idx.extend_from_slice(name);
-    idx.extend_from_slice(&0u64.to_le_bytes()); // offset placeholder
-    idx.extend_from_slice(&(payload.len() as u64).to_le_bytes());
-    idx.push(0u8);
-    idx.push(0u8);
 
-    let index_offset = v.len() as u64;
-    let index_offset_bytes = index_offset.to_le_bytes();
-    v[index_offset_pos..(index_offset_pos + 8)].copy_from_slice(&index_offset_bytes);
-    v.extend_from_slice(&idx);
+    let file_headers_region = 4 + 4 + name.len() + 1;
+    let header_size = 16 + file_headers_region as u64 + 8;
+    let payload_start = header_size;
+    let offset = payload_start;
+    let archive_size = payload_start + payload.len() as u64;
 
-    // payload start
-    let payload_offset = v.len() as u64;
+    let mut v = Vec::new();
+    v.extend_from_slice(b"BIGF");
+    v.extend_from_slice(&(archive_size as u32).to_le_bytes());
+    v.extend_from_slice(&(1u32).to_be_bytes());
+    v.extend_from_slice(&(header_size as u32).to_be_bytes());
+
+    // index entry: offset (BE u32), length (BE u32), name, null
+    v.extend_from_slice(&(offset as u32).to_be_bytes());
+    v.extend_from_slice(&(payload.len() as u32).to_be_bytes());
+    v.extend_from_slice(name);
+    v.push(0u8);
+
+    v.extend_from_slice(&[0u8; 8]);
+
     v.extend_from_slice(payload);
-
-    // patch offset in index
-    let mut cursor = index_offset as usize;
-    let name_len = u16::from_le_bytes([v[cursor], v[cursor + 1]]) as usize;
-    cursor += 2 + name_len;
-    v[cursor..(cursor + 8)].copy_from_slice(&payload_offset.to_le_bytes());
 
     let mut f = File::create(path)?;
     f.write_all(&v)?;

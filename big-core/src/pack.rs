@@ -1,14 +1,18 @@
 use crate::models::RepackJob;
 use std::fs::{self, File};
-use std::io::{Read, Seek, Write};
+use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 
-/// Pack a directory into a simple deterministic .BIG archive.
+/// Pack a directory into a native SAGE/ZeroHour .BIG archive (BIGF format).
 pub fn pack_directory<P: AsRef<Path>>(src: P, dest: P) -> anyhow::Result<()> {
     pack_directory_with_progress(src, dest, None)
 }
 
-/// Pack with optional progress sender.
+/// Pack with optional progress sender. Produces a header compatible with the
+/// native `BIGF`/`BIG4` layout used by SAGE/ZeroHour: FourCC, archive_size
+/// (LE u32), file_count (BE u32), header_size (BE u32), file index entries
+/// (offset BE u32, length BE u32, null-terminated name...), an 8-byte tail,
+/// then the concatenated payloads.
 pub fn pack_directory_with_progress<P: AsRef<Path>>(
     src: P,
     dest: P,
@@ -26,23 +30,25 @@ pub fn pack_directory_with_progress<P: AsRef<Path>>(
     }
     files.sort();
 
-    // compute index entry sizes
-    let mut index_size: u64 = 0;
+    // build name and length lists and compute file-headers region size
     let mut names: Vec<String> = Vec::new();
     let mut lengths: Vec<u64> = Vec::new();
+    let mut file_headers_region: u64 = 0;
     for p in &files {
         let rel = p.strip_prefix(src).unwrap().to_string_lossy().to_string();
         let meta = fs::metadata(p)?;
+        let name_len = rel.as_bytes().len() as u64;
+        // Each index entry: offset (4) + length (4) + name bytes + null (1)
+        file_headers_region += 4 + 4 + name_len + 1;
         names.push(rel);
         lengths.push(meta.len());
-        index_size += 2 + (names.last().unwrap().len() as u64) + 8 + 8 + 1 + 1; // name_len + name + offset + length + compressed + type_len
     }
 
-    let header_len: u64 = 4 + 4 + 8 + 4; // magic + version + index_offset + index_count
-    let index_offset = header_len; // index immediately after header
-    let payload_start = index_offset + index_size;
+    // header_size = SBigHeader(16) + file_headers_region + SBigLastHeader(8)
+    let header_size: u64 = 16 + file_headers_region + 8;
+    let payload_start = header_size;
 
-    // compute offsets
+    // compute offsets (within archive) for each payload
     let mut offsets: Vec<u64> = Vec::new();
     let mut cur = payload_start;
     for len in &lengths {
@@ -50,24 +56,28 @@ pub fn pack_directory_with_progress<P: AsRef<Path>>(
         cur += *len;
     }
 
+    let archive_size = cur; // final archive size
+
     // write file
     let mut f = File::create(dest)?;
-    // header
-    f.write_all(b"BIG\0")?;
-    f.write_all(&1u32.to_le_bytes())?; // version
-    f.write_all(&index_offset.to_le_bytes())?;
-    f.write_all(&(files.len() as u32).to_le_bytes())?;
+    // header: FourCC
+    f.write_all(b"BIGF")?;
+    // archive size stored as little-endian u32 per spec
+    f.write_all(&(archive_size as u32).to_le_bytes())?;
+    // file_count and header_size are big-endian
+    f.write_all(&(files.len() as u32).to_be_bytes())?;
+    f.write_all(&(header_size as u32).to_be_bytes())?;
 
-    // write index
+    // write index entries: offset (BE u32), length (BE u32), null-terminated name
     for (i, name) in names.iter().enumerate() {
-        let name_bytes = name.as_bytes();
-        f.write_all(&(name_bytes.len() as u16).to_le_bytes())?;
-        f.write_all(name_bytes)?;
-        f.write_all(&offsets[i].to_le_bytes())?;
-        f.write_all(&lengths[i].to_le_bytes())?;
-        f.write_all(&[0u8])?; // compressed = false
-        f.write_all(&[0u8])?; // type_len = 0
+        f.write_all(&(offsets[i] as u32).to_be_bytes())?;
+        f.write_all(&(lengths[i] as u32).to_be_bytes())?;
+        f.write_all(name.as_bytes())?;
+        f.write_all(&[0u8])?; // null terminator
     }
+
+    // write last header/tail (8 bytes) -- parser ignores this content, keep zeros
+    f.write_all(&[0u8; 8])?;
 
     // write payloads
     for (idx, p) in files.iter().enumerate() {
@@ -132,15 +142,14 @@ pub fn append_file_to_archive<P: AsRef<std::path::Path>, Q: AsRef<std::path::Pat
     names.push(archive_target_path.to_string());
     lengths.push(new_len);
 
-    // compute index size similar to pack_directory
-    let mut index_size: u64 = 0;
+    // compute file-headers region and header size like pack_directory
+    let mut file_headers_region: u64 = 0;
     for name in &names {
-        index_size += 2 + (name.len() as u64) + 8 + 8 + 1 + 1;
+        file_headers_region += 4 + 4 + (name.as_bytes().len() as u64) + 1; // offset + length + name + null
     }
 
-    let header_len: u64 = 4 + 4 + 8 + 4;
-    let index_offset = header_len;
-    let payload_start = index_offset + index_size;
+    let header_size: u64 = 16 + file_headers_region + 8; // SBigHeader + headers + tail
+    let payload_start = header_size;
 
     let mut offsets: Vec<u64> = Vec::new();
     let mut cur = payload_start;
@@ -155,22 +164,22 @@ pub fn append_file_to_archive<P: AsRef<std::path::Path>, Q: AsRef<std::path::Pat
 
     let mut out = std::fs::File::create(&tmp_path)?;
 
-    // write header
-    out.write_all(b"BIG\0")?;
-    out.write_all(&1u32.to_le_bytes())?;
-    out.write_all(&index_offset.to_le_bytes())?;
-    out.write_all(&(names.len() as u32).to_le_bytes())?;
+    // write native BIGF header
+    out.write_all(b"BIGF")?;
+    out.write_all(&(cur as u32).to_le_bytes())?; // archive size (LE)
+    out.write_all(&(names.len() as u32).to_be_bytes())?; // file_count (BE)
+    out.write_all(&(header_size as u32).to_be_bytes())?; // header_size (BE)
 
-    // write index
+    // write index entries
     for (i, name) in names.iter().enumerate() {
-        let name_bytes = name.as_bytes();
-        out.write_all(&(name_bytes.len() as u16).to_le_bytes())?;
-        out.write_all(name_bytes)?;
-        out.write_all(&offsets[i].to_le_bytes())?;
-        out.write_all(&lengths[i].to_le_bytes())?;
-        out.write_all(&[0u8])?;
+        out.write_all(&(offsets[i] as u32).to_be_bytes())?;
+        out.write_all(&(lengths[i] as u32).to_be_bytes())?;
+        out.write_all(name.as_bytes())?;
         out.write_all(&[0u8])?;
     }
+
+    // trailing 8 bytes
+    out.write_all(&[0u8; 8])?;
 
     // copy payloads for existing entries in original archive
     let mut srcf = std::fs::File::open(archive_path)?;

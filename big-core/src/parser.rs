@@ -4,14 +4,11 @@ use std::io::Read;
 use std::path::Path;
 
 use crate::archive;
-use crate::index::IndexReader;
 use crate::models::{Archive, Entry, Index};
 
-/// Simple on-disk header format used by this scaffold:
-/// [0..4) magic = b"BIG\0"
-/// [4..8) u32 version (LE)
-/// [8..16) u64 index_offset (LE)
-/// [16..20) u32 index_count (LE)
+/// Parse native SAGE/ZeroHour BIG archives (FourCC "BIGF" / "BIG4").
+/// Header layout (C++ SBigHeader):
+/// u32 id (FourCC), u32 archive_size (LE), u32 file_count (BE), u32 header_size (BE)
 pub fn parse_archive<P: AsRef<Path>>(path: P) -> anyhow::Result<(Archive, Index, Vec<Entry>)> {
     let path_ref = path.as_ref();
 
@@ -24,27 +21,6 @@ pub fn parse_archive<P: AsRef<Path>>(path: P) -> anyhow::Result<(Archive, Index,
     // read header
     let mut magic = [0u8; 4];
     f.read_exact(&mut magic)?;
-
-    // Scaffold header: "BIG\0" with version/u64 index_offset/u32 index_count
-    if &magic == b"BIG\0" {
-        let mut u32buf = [0u8; 4];
-        f.read_exact(&mut u32buf)?;
-        let _version = u32::from_le_bytes(u32buf);
-
-        let mut u64buf = [0u8; 8];
-        f.read_exact(&mut u64buf)?;
-        let index_offset = u64::from_le_bytes(u64buf);
-
-        f.read_exact(&mut u32buf)?;
-        let index_count = u32::from_le_bytes(u32buf);
-
-        // use IndexReader to read entries
-        let reader = IndexReader::new();
-        let entries =
-            reader.read_entries_from(&mut f, index_offset, index_count).unwrap_or_default();
-
-        return Ok((archive, Index { entries_count: entries.len() }, entries));
-    }
 
     // Try project's native BIG format (C++ style header starting with "BIGF")
     if &magic == b"BIGF" {
