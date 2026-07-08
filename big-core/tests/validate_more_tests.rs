@@ -42,7 +42,7 @@ fn validate_detects_overlapping_entries() {
     let entry2_len = 60u64;
 
     // compute archive size large enough to include payload region
-    let archive_size = (payload_start as u64).max(entry2_offset + entry2_len + 10);
+    let archive_size = payload_start.max(entry2_offset + entry2_len + 10);
 
     // write header
     f.write_all(b"BIGF").unwrap();

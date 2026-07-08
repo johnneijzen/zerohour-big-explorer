@@ -1,6 +1,6 @@
 use crate::models::RepackJob;
 use std::fs::{self, File};
-use std::io::{Read, Seek, SeekFrom, Write};
+use std::io::{Read, Seek, Write};
 use std::path::{Path, PathBuf};
 
 /// Pack a directory into a native SAGE/ZeroHour .BIG archive (BIGF format).
@@ -37,7 +37,7 @@ pub fn pack_directory_with_progress<P: AsRef<Path>>(
     for p in &files {
         let rel = p.strip_prefix(src).unwrap().to_string_lossy().to_string();
         let meta = fs::metadata(p)?;
-        let name_len = rel.as_bytes().len() as u64;
+        let name_len = rel.len() as u64;
         // Each index entry: offset (4) + length (4) + name bytes + null (1)
         file_headers_region += 4 + 4 + name_len + 1;
         names.push(rel);
@@ -145,7 +145,7 @@ pub fn append_file_to_archive<P: AsRef<std::path::Path>, Q: AsRef<std::path::Pat
     // compute file-headers region and header size like pack_directory
     let mut file_headers_region: u64 = 0;
     for name in &names {
-        file_headers_region += 4 + 4 + (name.as_bytes().len() as u64) + 1; // offset + length + name + null
+        file_headers_region += 4 + 4 + (name.len() as u64) + 1; // offset + length + name + null
     }
 
     let header_size: u64 = 16 + file_headers_region + 8; // SBigHeader + headers + tail

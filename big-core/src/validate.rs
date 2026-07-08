@@ -1,6 +1,6 @@
 use crate::models::{ValidationIssue, ValidationResult};
 use std::fs::File;
-use std::io::{Read, Seek};
+use std::io::Read;
 
 /// Enhanced validation routine:
 /// - file exists and readable
